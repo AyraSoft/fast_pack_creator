@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="FPC001" name="Fast Pack Creator" projectType="guiapp" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="Ayra Soft"
+              companyCopyright="Copyright 2024 Ayra Soft" companyWebsite="https://www.ayra.live"
+              displaySplashScreen="0" cppLanguageStandard="20" defines="JUCE_MODAL_LOOPS_PERMITTED=1">
+  <MAINGROUP id="MainGroup" name="Fast Pack Creator">
+    <GROUP id="SourceGroup" name="Source">
+      <FILE id="Main" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="MainComponent_h" name="MainComponent.h" compile="0" resource="0"
+            file="Source/MainComponent.h"/>
+      <FILE id="MainComponent_cpp" name="MainComponent.cpp" compile="1" resource="0"
+            file="Source/MainComponent.cpp"/>
+      <FILE id="ConfigPanel_h" name="ConfigurationPanel.h" compile="0" resource="0"
+            file="Source/ConfigurationPanel.h"/>
+      <FILE id="ConfigPanel_cpp" name="ConfigurationPanel.cpp" compile="1"
+            resource="0" file="Source/ConfigurationPanel.cpp"/>
+      <GROUP id="MidiGridGroup" name="MidiGrid">
+        <FILE id="MidiGrid_h" name="MidiGridComponent.h" compile="0" resource="0"
+              file="Source/MidiGrid/MidiGridComponent.h"/>
+        <FILE id="MidiGrid_cpp" name="MidiGridComponent.cpp" compile="1" resource="0"
+              file="Source/MidiGrid/MidiGridComponent.cpp"/>
+        <FILE id="GridModel_h" name="MidiGridModel.h" compile="0" resource="0"
+              file="Source/MidiGrid/MidiGridModel.h"/>
+        <FILE id="GridModel_cpp" name="MidiGridModel.cpp" compile="1" resource="0"
+              file="Source/MidiGrid/MidiGridModel.cpp"/>
+        <FILE id="ColHeader_h" name="ColumnHeader.h" compile="0" resource="0"
+              file="Source/MidiGrid/ColumnHeader.h"/>
+        <FILE id="ColHeader_cpp" name="ColumnHeader.cpp" compile="1" resource="0"
+              file="Source/MidiGrid/ColumnHeader.cpp"/>
+        <FILE id="RowHeader_h" name="RowHeader.h" compile="0" resource="0"
+              file="Source/MidiGrid/RowHeader.h"/>
+        <FILE id="RowHeader_cpp" name="RowHeader.cpp" compile="1" resource="0"
+              file="Source/MidiGrid/RowHeader.cpp"/>
+        <FILE id="CellPad_h" name="CellPad.h" compile="0" resource="0" file="Source/MidiGrid/CellPad.h"/>
+        <FILE id="CellPad_cpp" name="CellPad.cpp" compile="1" resource="0"
+              file="Source/MidiGrid/CellPad.cpp"/>
+      </GROUP>
+      <GROUP id="AudioGroup" name="Audio">
+        <FILE id="PluginHost_h" name="PluginHost.h" compile="0" resource="0"
+              file="Source/Audio/PluginHost.h"/>
+        <FILE id="PluginHost_cpp" name="PluginHost.cpp" compile="1" resource="0"
+              file="Source/Audio/PluginHost.cpp"/>
+        <FILE id="MidiPlayer_h" name="MidiPlayer.h" compile="0" resource="0"
+              file="Source/Audio/MidiPlayer.h"/>
+        <FILE id="MidiPlayer_cpp" name="MidiPlayer.cpp" compile="1" resource="0"
+              file="Source/Audio/MidiPlayer.cpp"/>
+      </GROUP>
+      <GROUP id="RenderGroup" name="Rendering">
+        <FILE id="BatchRender_h" name="BatchRenderer.h" compile="0" resource="0"
+              file="Source/Rendering/BatchRenderer.h"/>
+        <FILE id="BatchRender_cpp" name="BatchRenderer.cpp" compile="1" resource="0"
+              file="Source/Rendering/BatchRenderer.cpp"/>
+        <FILE id="KwOXF1" name="ParallelBatchRenderer.cpp" compile="1" resource="0"
+              file="Source/Rendering/ParallelBatchRenderer.cpp"/>
+        <FILE id="gEdj02" name="ParallelBatchRenderer.h" compile="0" resource="0"
+              file="Source/Rendering/ParallelBatchRenderer.h"/>
+        <FILE id="RenderJob_h" name="RenderJob.h" compile="0" resource="0"
+              file="Source/Rendering/RenderJob.h"/>
+        <FILE id="RenderJob_cpp" name="RenderJob.cpp" compile="1" resource="0"
+              file="Source/Rendering/RenderJob.cpp"/>
+      </GROUP>
+    </GROUP>
+    <FILE id="ruIJLB" name="ProjectSerializer.cpp" compile="1" resource="0"
+          file="Source/ProjectSerializer.cpp"/>
+    <FILE id="lPDqFC" name="ProjectSerializer.h" compile="0" resource="0"
+          file="Source/ProjectSerializer.h"/>
+  </MAINGROUP>
+  <MODULES>
+    <MODULE id="ayra_gui" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="ayra_plugins_manager" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="ayra_project_base" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="ayra_rapid_thread_pool" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="ayra_selection_engine" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="ff_meters" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors_headless" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+  <EXPORTFORMATS>
+    <XCODE_MAC targetFolder="Builds/MacOSX" extraCompilerFlags="-Wno-deprecated-declarations"
+               extraLinkerFlags="" smallIcon="" bigIcon="">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
+                       libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
+                       osxCompatibility="11 SDK"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
+                       libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
+                       osxCompatibility="11 SDK"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="/Applications/JUCE/modules"/>
+        <MODULEPATH id="ayra_project_base" path="/Users/Lavori/Juce/Juce Modules"/>
+        <MODULEPATH id="ayra_selection_engine" path="/Users/Lavori/Juce/Juce Modules"/>
+        <MODULEPATH id="ayra_gui" path="/Users/Lavori/Juce/Juce Modules"/>
+        <MODULEPATH id="ayra_plugins_manager" path="/Users/Lavori/Juce/Juce Modules"/>
+        <MODULEPATH id="juce_audio_processors_headless" path="../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="ff_meters" path="../../Juce/Juce Modules"/>
+        <MODULEPATH id="ayra_rapid_thread_pool" path="../../Juce/Juce Modules"/>
+      </MODULEPATHS>
+    </XCODE_MAC>
+  </EXPORTFORMATS>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"
+               JUCE_PLUGINHOST_VST3="1" JUCE_PLUGINHOST_AU="1" JUCE_PLUGINHOST_LADSPA="0"
+               JUCE_PLUGINHOST_LV2="0"/>
+</JUCERPROJECT>
