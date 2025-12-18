@@ -23,4 +23,8 @@ public:
                        float velocityMultiplier);
 
   static double getSequenceDuration(const MidiMessageSequence &seq);
+
+  // Get the MIDI file duration in seconds based on actual file length (for loop
+  // mode)
+  static double getMidiFileDuration(const File &file, double bpm);
 };

@@ -55,10 +55,6 @@
               file="Source/Rendering/ParallelBatchRenderer.cpp"/>
         <FILE id="gEdj02" name="ParallelBatchRenderer.h" compile="0" resource="0"
               file="Source/Rendering/ParallelBatchRenderer.h"/>
-        <FILE id="RenderJob_h" name="RenderJob.h" compile="0" resource="0"
-              file="Source/Rendering/RenderJob.h"/>
-        <FILE id="RenderJob_cpp" name="RenderJob.cpp" compile="1" resource="0"
-              file="Source/Rendering/RenderJob.cpp"/>
       </GROUP>
     </GROUP>
     <FILE id="ruIJLB" name="ProjectSerializer.cpp" compile="1" resource="0"

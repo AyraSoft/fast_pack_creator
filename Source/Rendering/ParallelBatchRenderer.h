@@ -28,6 +28,9 @@ public:
     int bitDepth = 24;
     double bpm = 120.0;
     float silenceThresholdDb = -50.0f;
+    float masterGainDb = 0.0f; // Master gain in dB to apply to all renders
+    bool loop =
+        false; // If true, truncate exactly at MIDI end for seamless looping
   };
 
   struct RenderJob {

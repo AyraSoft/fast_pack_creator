@@ -79,7 +79,7 @@ MainComponent::MainComponent() {
   addAndMakeVisible(masterVolume);
   masterVolume.setSliderStyle(Slider::Rotary);
   masterVolume.setRange(-96.0, 12.0, 0.1);
-  masterVolume.setValue(0.0, dontSendNotification);
+  masterVolume.setValue(-6.0, dontSendNotification);
   masterVolume.setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow,
                                false, 200, 30);
   masterVolume.setSkewFactorFromMidPoint(
@@ -262,6 +262,8 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
   settings.bitDepth = 24;
   settings.bpm = bpm;
   settings.silenceThresholdDb = -50.0f;
+  settings.masterGainDb = static_cast<float>(masterVolume.getValue());
+  settings.loop = configPanel.isLoopEnabled();
 
   parallelRenderer = std::make_unique<ParallelBatchRenderer>(
       pluginsManager, settings, outputDir);
@@ -291,23 +293,8 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
       job.velocityMultiplier = columnSettings.velocityMultiplier;
       job.volumeDb = rowData.volumeDb;
 
-      // Output: "MidiName [RowName] [BPM].wav"
-      // Example: "Holographic Sliders [Var1] [120 BPM].wav"
-      // User requested: "nomeDelMidiFile [RowName] [BPM].wav" (plus Var suffix
-      // from our queue logic?) Actually user example: "Holographic Sliders
-      // [Var1] [120 BPM].wav" where [Var1] is likely the ROW name. Wait, user
-      // said: "nomeDelMidiFile [RowName] [BPM].wav" If we are doing variations,
-      // maybe the suffix belongs to the RowName? Ah, the user req said:
-      // "nomeDelMidiFile [RowName] [BPM].wav"
-      // And "reimpostare tutti i bpm dei midi e passare il nuovo bpm ai plugin
-      // e rifare la renderizzazione. serve a creare la variazione di bpm." So
-      // we are rendering the SAME row at DIFFERENT BPMs. So we should append
-      // the BPM to the filename. The [Var1] in user example might be the Row
-      // Name. The variation from BPM is implicit in the [BPM] tag? Or should we
-      // add [Var1] text if valid? User Example: "Holographic Sliders [Var1]
-      // [120 BPM].wav" My Logic: MidiName + " [" + RowName + "]" + pass.suffix?
-      // + " [" + String(bpm) + " BPM].wav" User instructions imply the RowName
-      // IS "[Var1]" (from RowHeader::nameLabel).
+      // File naming: add [Loop] or [Trail] suffix based on mode
+      String modeSuffix = settings.loop ? " [Loop]" : " [Trail]";
 
       File midiDir =
           outputDir.getChildFile(midiFile.getFileNameWithoutExtension());
@@ -315,7 +302,7 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
 
       String filename = midiFile.getFileNameWithoutExtension() + " [" +
                         rowData.name + "]" + " [" + String(bpm) + " BPM]" +
-                        ".wav";
+                        modeSuffix + ".wav";
 
       job.outputFile = midiDir.getChildFile(filename);
 

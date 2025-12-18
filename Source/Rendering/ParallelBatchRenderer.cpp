@@ -278,48 +278,68 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
 
     plugin->releaseResources();
 
-    // 4. Apply volume gain
-    if (job.volumeDb > -96.0f) {
-      float volumeGain = Decibels::decibelsToGain(job.volumeDb);
-      fullBuffer.applyGain(volumeGain);
+    // 4. Apply combined volume gain (row gain + master gain)
+    float rowGainLinear =
+        (job.volumeDb > -96.0f) ? Decibels::decibelsToGain(job.volumeDb) : 0.0f;
+    float masterGainLinear =
+        (settings.masterGainDb > -96.0f)
+            ? Decibels::decibelsToGain(settings.masterGainDb)
+            : 0.0f;
+    float combinedGain = rowGainLinear * masterGainLinear;
+
+    if (combinedGain > 0.0f) {
+      fullBuffer.applyGain(combinedGain);
     } else {
       fullBuffer.clear();
     }
 
-    // 5. Find silence start (below threshold)
-    float thresholdLinear =
-        Decibels::decibelsToGain(settings.silenceThresholdDb);
-    int64 silenceStartSample = totalSamples;
+    // 5. Determine final sample count based on loop mode
+    int64 finalSamples;
 
-    // Scan backwards
-    for (int64 pos = totalSamples - blockSize; pos >= 0; pos -= blockSize) {
-      int samplesToCheck =
-          static_cast<int>(jmin((int64)blockSize, totalSamples - pos));
+    if (settings.loop) {
+      // Loop mode: truncate exactly at MIDI file duration for seamless looping
+      // Use getMidiFileDuration which reads the actual MIDI file length in
+      // ticks
+      double loopDuration =
+          MidiPlayer::getMidiFileDuration(job.midiFile, settings.bpm);
+      finalSamples = static_cast<int64>(loopDuration * settings.sampleRate);
+    } else {
+      // Normal mode: find silence start and snap to next bar
+      float thresholdLinear =
+          Decibels::decibelsToGain(settings.silenceThresholdDb);
+      int64 silenceStartSample = totalSamples;
 
-      float peak = 0.0f;
-      for (int ch = 0; ch < numChannels; ++ch) {
-        peak = jmax(peak, fullBuffer.getMagnitude(ch, static_cast<int>(pos),
-                                                  samplesToCheck));
+      // Scan backwards
+      for (int64 pos = totalSamples - blockSize; pos >= 0; pos -= blockSize) {
+        int samplesToCheck =
+            static_cast<int>(jmin((int64)blockSize, totalSamples - pos));
+
+        float peak = 0.0f;
+        for (int ch = 0; ch < numChannels; ++ch) {
+          peak = jmax(peak, fullBuffer.getMagnitude(ch, static_cast<int>(pos),
+                                                    samplesToCheck));
+        }
+
+        if (peak > thresholdLinear) {
+          silenceStartSample = pos + samplesToCheck;
+          break;
+        }
       }
 
-      if (peak > thresholdLinear) {
-        silenceStartSample = pos + samplesToCheck;
-        break;
-      }
+      // Snap to next bar
+      double silenceStartTime = silenceStartSample / settings.sampleRate;
+      double barDuration = 60.0 / settings.bpm * 4.0; // 4 beats per bar
+      double bars = silenceStartTime / barDuration;
+      double nextBar = std::ceil(bars);
+      double finalEndTime = nextBar * barDuration;
+
+      // Ensure minimum duration (at least one bar)
+      if (finalEndTime < barDuration)
+        finalEndTime = barDuration;
+
+      finalSamples = static_cast<int64>(finalEndTime * settings.sampleRate);
     }
 
-    // 6. Snap to next bar
-    double silenceStartTime = silenceStartSample / settings.sampleRate;
-    double barDuration = 60.0 / settings.bpm * 4.0; // 4 beats per bar
-    double bars = silenceStartTime / barDuration;
-    double nextBar = std::ceil(bars);
-    double finalEndTime = nextBar * barDuration;
-
-    // Ensure minimum duration (at least one bar)
-    if (finalEndTime < barDuration)
-      finalEndTime = barDuration;
-
-    int64 finalSamples = static_cast<int64>(finalEndTime * settings.sampleRate);
     finalSamples = jmin(finalSamples, totalSamples);
 
     // 7. Write to file

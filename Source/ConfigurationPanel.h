@@ -34,6 +34,7 @@ public:
   double getVariation1Bpm() const;
   bool isVariation2Enabled() const;
   double getVariation2Bpm() const;
+  bool isLoopEnabled() const { return loop.getToggleState(); }
 
   //==============================================================================
   // Callbacks
@@ -41,8 +42,8 @@ public:
   std::function<void(double bpm)> onBpmChanged;
   std::function<void(const File &midiFolder)> onMidiFolderSelected;
   std::function<void()> onMidiPanic;
-    
-   void reset();
+
+  void reset();
 
 private:
   //==============================================================================
@@ -56,8 +57,8 @@ private:
   Slider variationBpm1Slider;
   ToggleButton variationBpm2{"BPM var1"};
   Slider variationBpm2Slider;
-    
-    ToggleButton loop{"Loop"};
+
+  ToggleButton loop{"Loop"};
 
   TextButton selectFolderButton{"Select MIDI Folder"};
   Label folderPathLabel;

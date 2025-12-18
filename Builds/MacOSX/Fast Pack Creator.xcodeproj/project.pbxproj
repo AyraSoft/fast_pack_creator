@@ -31,7 +31,6 @@
 		6109F55D75B02A35C6680C1E /* include_juce_audio_processors_headless_ara.cpp */ = {isa = PBXBuildFile; fileRef = F6FF8BE8A24FB21A36668548; };
 		6663F16BE4A4ABD70D6EA53F /* include_juce_osc.cpp */ = {isa = PBXBuildFile; fileRef = 5027C2202E3755DEFC2A82B5; };
 		666F246B1700633C19A9F009 /* Metal.framework */ = {isa = PBXBuildFile; fileRef = 4FEC52D544C7BA7D79D3C3D5; settings = { ATTRIBUTES = (Weak, ); }; };
-		74A976A393095AC4C1F7AD20 /* RenderJob.cpp */ = {isa = PBXBuildFile; fileRef = 2AC8C49889449A0D79FDA698; };
 		7D3D11AC8DBE271FD6EB3D2F /* MainComponent.cpp */ = {isa = PBXBuildFile; fileRef = C12307EE4EF29E9FE1C460C4; };
 		80A797EBDC1A11B68A62F6BE /* Security.framework */ = {isa = PBXBuildFile; fileRef = B376FEF5F329C532C95EFFC0; };
 		86A6B59CF476475DBB4654B6 /* include_juce_serial.cpp */ = {isa = PBXBuildFile; fileRef = 48088EEFDC743D7FE7A3DAD7; };
@@ -90,10 +89,8 @@
 		24948F841FA7EC8646251577 /* include_ayra_audio_processors_engine.mm */ /* include_ayra_audio_processors_engine.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_ayra_audio_processors_engine.mm; path = ../../JuceLibraryCode/include_ayra_audio_processors_engine.mm; sourceTree = SOURCE_ROOT; };
 		264913929ACF57B18F7F4194 /* BatchRenderer.cpp */ /* BatchRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = BatchRenderer.cpp; path = ../../Source/Rendering/BatchRenderer.cpp; sourceTree = SOURCE_ROOT; };
 		295A32BCA3B224FBFAEF2B93 /* juce_audio_processors_headless */ /* juce_audio_processors_headless */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors_headless; path = /Applications/JUCE/modules/juce_audio_processors_headless; sourceTree = "<absolute>"; };
-		2AC8C49889449A0D79FDA698 /* RenderJob.cpp */ /* RenderJob.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = RenderJob.cpp; path = ../../Source/Rendering/RenderJob.cpp; sourceTree = SOURCE_ROOT; };
 		2BA25EB219EF44638EC18F9F /* juce_gui_extra */ /* juce_gui_extra */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_gui_extra; path = /Applications/JUCE/modules/juce_gui_extra; sourceTree = "<absolute>"; };
 		2BCAC4DD4D1E8283E58B8804 /* ayra_graph */ /* ayra_graph */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ayra_graph; path = "/Users/Lavori/Juce/Juce Modules/ayra_graph"; sourceTree = "<absolute>"; };
-		326616ECA42CFBF084F81881 /* RenderJob.h */ /* RenderJob.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RenderJob.h; path = ../../Source/Rendering/RenderJob.h; sourceTree = SOURCE_ROOT; };
 		359FFD57CB6630D6BD9CA897 /* CoreAudio.framework */ /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		35E850CEF18351CACAB6A24B /* include_juce_core.mm */ /* include_juce_core.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_core.mm; path = ../../JuceLibraryCode/include_juce_core.mm; sourceTree = SOURCE_ROOT; };
 		3795CBF22FFA3F762D66650A /* MidiGridComponent.h */ /* MidiGridComponent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MidiGridComponent.h; path = ../../Source/MidiGrid/MidiGridComponent.h; sourceTree = SOURCE_ROOT; };
@@ -317,8 +314,6 @@
 				264913929ACF57B18F7F4194,
 				B2157C8D45AA7889C7A01A1A,
 				0E005953F7D4039AB9762F33,
-				326616ECA42CFBF084F81881,
-				2AC8C49889449A0D79FDA698,
 			);
 			name = Rendering;
 			sourceTree = "<group>";
@@ -491,7 +486,6 @@
 				3F3931F3EA06C608D479F8A2,
 				A77E25022BCFBE68211105B0,
 				9F61C4ABBDE2F288AA716C69,
-				74A976A393095AC4C1F7AD20,
 				12C7D8FFDAC9C0E3C5CC3536,
 				B368C9BBD41815894C0C1E4B,
 				1BA1CF9DD63EB88A4A3FC9A0,

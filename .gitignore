@@ -1,0 +1,51 @@
+# JUCE Build artifacts
+Builds/
+JuceLibraryCode/
+
+# macOS
+.DS_Store
+*.xcodeproj/
+*.xcworkspace/
+
+# Windows
+*.exe
+*.dll
+*.pdb
+*.obj
+*.lib
+
+# Linux
+*.so
+*.a
+
+# General build outputs
+*.o
+*.d
+*.dSYM/
+
+# IDE files
+*.xcuserdata/
+*.idea/
+*.vscode/
+
+# Compiled plugins
+*.vst3/
+*.component/
+*.auv3/
+*.aax/
+*.vst/
+
+# Debug files
+*.log
+*.tmp
+
+# User-specific files
+*.user
+*.suo
+*.ncb
+*.aps
+
+# Backup files
+*~
+*.bak
+*.swp
