@@ -92,7 +92,7 @@ void RowHeader::paint(Graphics &g) {
 
 void RowHeader::resized() {
   auto bounds = getLocalBounds().reduced(4);
-  macroToggle.setBounds(bounds.removeFromLeft(30));
+    macroToggle.setBounds(bounds.removeFromLeft(30).reduced(4, ((bounds.getHeight()-30) / 2)  + 4));
 
   // Top row: name label, buttons
   auto topRow = bounds.removeFromTop(22);

@@ -13,7 +13,12 @@
 #pragma once
 
 
+#include <ayra_audio_processors_engine/ayra_audio_processors_engine.h>
+#include <ayra_buffers/ayra_buffers.h>
+#include <ayra_dmx/ayra_dmx.h>
+#include <ayra_graph/ayra_graph.h>
 #include <ayra_gui/ayra_gui.h>
+#include <ayra_pdf/ayra_pdf.h>
 #include <ayra_plugins_manager/ayra_plugins_manager.h>
 #include <ayra_project_base/ayra_project_base.h>
 #include <ayra_rapid_thread_pool/ayra_rapid_thread_pool.h>
@@ -27,10 +32,13 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_core/juce_core.h>
 #include <juce_data_structures/juce_data_structures.h>
+#include <juce_dsp/juce_dsp.h>
 #include <juce_events/juce_events.h>
 #include <juce_graphics/juce_graphics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_gui_extra/juce_gui_extra.h>
+#include <juce_osc/juce_osc.h>
+#include <juce_serial/juce_serial.h>
 
 
 #if defined (JUCE_PROJUCER_VERSION) && JUCE_PROJUCER_VERSION < JUCE_VERSION

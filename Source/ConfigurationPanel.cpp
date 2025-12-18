@@ -59,6 +59,8 @@ ConfigurationPanel::ConfigurationPanel() {
   variationBpm2Slider.setRange(20.0, 300.0, 1.0);
   variationBpm2Slider.setValue(120.0, dontSendNotification);
   variationBpm2Slider.setTextBoxStyle(Slider::TextBoxLeft, false, 80, 20);
+    addAndMakeVisible(loop);
+    loop.setToggleState(true, dontSendNotification);
 
   // Folder selection
   selectFolderButton.onClick = [this] {
@@ -114,6 +116,9 @@ void ConfigurationPanel::resized() {
   row1.removeFromLeft(10);
   variationBpm2.setBounds(row1.removeFromLeft(80));
   variationBpm2Slider.setBounds(row1.removeFromLeft(60));
+    
+    row1.removeFromLeft(40);
+    loop.setBounds(row1.removeFromLeft(80));
 
   bounds.removeFromTop(5);
 

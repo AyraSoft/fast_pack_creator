@@ -18,8 +18,7 @@
 #include "ProjectSerializer.h"
 #include "Rendering/ParallelBatchRenderer.h"
 #include <JuceHeader.h>
-#include <deque>
-#include <ff_meters/ff_meters.h>
+
 
 //==============================================================================
 class MainComponent : public Component,

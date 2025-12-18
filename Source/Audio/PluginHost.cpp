@@ -15,12 +15,32 @@
 //==============================================================================
 PluginHost::PluginHost(AudioDeviceManager &dm, ayra::PluginsManager &pm)
     : deviceManager(dm), pluginsManager(pm) {
+
+  // Initialize Graph
+  graph = std::make_unique<ayra::AudioProcessorGraph>();
+  graph->setProcessingMode(ayra::ProcessingMode::multiThread);
+
+  // Create fixed nodes
+  // MIDI Input Node
+  auto midiInputProcessor =
+      std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(
+          AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode);
+  midiInputNode = graph->addNode(std::move(midiInputProcessor));
+
+  // Audio Output Node
+  auto audioOutputProcessor =
+      std::make_unique<AudioProcessorGraph::AudioGraphIOProcessor>(
+          AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode);
+  audioOutputNode = graph->addNode(std::move(audioOutputProcessor));
+
   // Register as MIDI input callback
   auto midiInputs = MidiInput::getAvailableDevices();
   for (auto &input : midiInputs) {
     deviceManager.setMidiInputDeviceEnabled(input.identifier, true);
     deviceManager.addMidiInputDeviceCallback(input.identifier, this);
   }
+
+  acceptMidiInput = true; // Enable MIDI input by default
 }
 
 PluginHost::~PluginHost() {
@@ -32,15 +52,131 @@ PluginHost::~PluginHost() {
 }
 
 //==============================================================================
+//==============================================================================
 void PluginHost::setActivePlugin(AudioPluginInstance *plugin) {
   const ScopedLock sl(midiLock);
 
-  activePlugin = plugin;
+  // Rebuild graph topology
+  rebuildGraph(std::move(plugin));
+}
 
-  if (activePlugin != nullptr) {
-    activePlugin->prepareToPlay(currentSampleRate, currentBlockSize);
-    activePlugin->setPlayHead(this);
+// Proxy Processor to wrap external plugins in the graph without taking
+// ownership
+class ProxyProcessor : public AudioProcessor {
+public:
+  ProxyProcessor(AudioPluginInstance *target)
+      : AudioProcessor(
+            BusesProperties()
+                .withInput("Input", AudioChannelSet::stereo(), true)
+                .withOutput("Output", AudioChannelSet::stereo(), true)),
+        targetProcessor(target) {}
+
+  void prepareToPlay(double sampleRate, int samplesPerBlock) override {
+    if (targetProcessor) {
+      targetProcessor->enableAllBuses();
+      targetProcessor->prepareToPlay(sampleRate, samplesPerBlock);
+    }
   }
+
+  void releaseResources() override {
+    // We do NOT release resources of the target here, as we don't own it.
+    // The owner (MidiGrid) manages the lifecycle.
+  }
+
+  void processBlock(AudioBuffer<float> &buffer,
+                    MidiBuffer &midiMessages) override {
+    if (targetProcessor) {
+      targetProcessor->processBlock(buffer, midiMessages);
+    }
+  }
+
+  void processBlock(AudioBuffer<double> &buffer,
+                    MidiBuffer &midiMessages) override {
+    if (targetProcessor)
+      targetProcessor->processBlock(buffer, midiMessages);
+  }
+
+  AudioProcessorEditor *createEditor() override { return nullptr; }
+  bool hasEditor() const override { return false; }
+  const String getName() const override { return "Proxy"; }
+  bool acceptsMidi() const override { return true; }
+  bool producesMidi() const override { return true; }
+  double getTailLengthSeconds() const override { return 0.0; }
+  int getNumPrograms() override { return 1; }
+  int getCurrentProgram() override { return 0; }
+  void setCurrentProgram(int) override {}
+  const String getProgramName(int) override { return "Default"; }
+  void changeProgramName(int, const String &) override {}
+  void getStateInformation(MemoryBlock &) override {}
+  void setStateInformation(const void *, int) override {}
+
+  AudioPluginInstance *getTarget() const { return targetProcessor; }
+
+private:
+  AudioPluginInstance *targetProcessor = nullptr;
+};
+
+void PluginHost::rebuildGraph(AudioPluginInstance *plugin) {
+  // Remove old plugin and gain nodes if they exist
+  if (activePluginNode != nullptr) {
+    graph->removeNode(activePluginNode.get());
+    activePluginNode = nullptr;
+  }
+  if (activePluginGainNode != nullptr) {
+    graph->removeNode(activePluginGainNode.get());
+    activePluginGainNode = nullptr;
+  }
+
+  if (plugin != nullptr) {
+    // prepare plugin
+    plugin->enableAllBuses();
+    plugin->setPlayHead(this);
+
+    // Add plugin node VIA PROXY
+    auto proxy = std::make_unique<ProxyProcessor>(plugin);
+    activePluginNode = graph->addNode(std::move(proxy));
+
+    // Add plugin gain node (applies combined rowGain * masterGain)
+    auto gainProc = std::make_unique<GainProcessor>();
+    gainProc->setGain(currentRowGain * currentMasterGain);
+    activePluginGainNode = graph->addNode(std::move(gainProc));
+
+    // Connect: Midi Input -> Plugin (Proxy)
+    graph->addConnection(
+        {{midiInputNode->nodeID, ayra::AudioProcessorGraph::midiChannel},
+         {activePluginNode->nodeID, ayra::AudioProcessorGraph::midiChannel}});
+
+    // Connect: Plugin (Proxy) -> Plugin Gain
+    graph->addConnection(
+        {{activePluginNode->nodeID, 0}, {activePluginGainNode->nodeID, 0}});
+    graph->addConnection(
+        {{activePluginNode->nodeID, 1}, {activePluginGainNode->nodeID, 1}});
+
+    // Connect: Plugin Gain -> Audio Output (direct connection, no master gain
+    // node)
+    graph->addConnection(
+        {{activePluginGainNode->nodeID, 0}, {audioOutputNode->nodeID, 0}});
+    graph->addConnection(
+        {{activePluginGainNode->nodeID, 1}, {audioOutputNode->nodeID, 1}});
+
+    // Rebuild the graph's internal processing order after topology changes
+    graph->rebuild();
+
+    // Re-prepare the graph with current sample rate and block size
+    if (currentSampleRate > 0 && currentBlockSize > 0) {
+      graph->prepareToPlay(currentSampleRate, currentBlockSize);
+    }
+  }
+}
+
+AudioPluginInstance *PluginHost::getActivePlugin() const {
+  if (activePluginNode) {
+    if (auto *proxy =
+            dynamic_cast<ProxyProcessor *>(activePluginNode->getProcessor())) {
+      return proxy->getTarget();
+    }
+  }
+  return nullptr;
 }
 
 void PluginHost::setAcceptingMidiInput(bool accept) {
@@ -65,15 +201,17 @@ void PluginHost::stopPlayback() {
   playing = false;
 
   // Send all notes off
-  if (activePlugin != nullptr) {
+  if (activePluginNode != nullptr) {
     MidiBuffer allNotesOff;
     for (int ch = 1; ch <= 16; ++ch) {
       allNotesOff.addEvent(MidiMessage::allNotesOff(ch), 0);
     }
 
-    AudioBuffer<float> dummyBuffer(2, currentBlockSize);
-    dummyBuffer.clear();
-    activePlugin->processBlock(dummyBuffer, allNotesOff);
+    if (auto *proc = activePluginNode->getProcessor()) {
+      AudioBuffer<float> dummyBuffer(2, currentBlockSize);
+      dummyBuffer.clear();
+      proc->processBlock(dummyBuffer, allNotesOff);
+    }
   }
 }
 
@@ -111,22 +249,16 @@ void PluginHost::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
   int rmsWindow = static_cast<int>(sampleRate * 0.05 / samplesPerBlockExpected);
   meterSource.resize(2, rmsWindow > 0 ? rmsWindow : 8);
 
-  if (activePlugin != nullptr) {
-    activePlugin->prepareToPlay(sampleRate, samplesPerBlockExpected);
-  }
+  // Set IO channels for the graph (stereo in/out)
+  graph->setPlayConfigDetails(0, 2, sampleRate, samplesPerBlockExpected);
+  graph->setPlayHead(this);
+  graph->prepareToPlay(sampleRate, samplesPerBlockExpected);
 }
 
-void PluginHost::releaseResources() {
-  if (activePlugin != nullptr) {
-    activePlugin->releaseResources();
-  }
-}
+void PluginHost::releaseResources() { graph->releaseResources(); }
 
 void PluginHost::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) {
   bufferToFill.clearActiveBufferRegion();
-
-  if (activePlugin == nullptr)
-    return;
 
   MidiBuffer midiBuffer;
   int numSamples = bufferToFill.numSamples;
@@ -149,33 +281,41 @@ void PluginHost::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) {
 
       currentPpqPosition += beatsInBlock;
       currentSampleCount += numSamples;
-
-      // Check end of sequence (assuming last event time + 1 beat margin)
-      if (playbackSequence.getNumEvents() > 0) {
-        if (currentPpqPosition >
-            playbackSequence.getEndTime() + 4.0) { // +1 bar release
-          // optionally handle auto-stop
-        }
-      }
     }
   }
 
-  // Se playhead is set on plugin (done in setActivePlugin), we are good.
-
-  // Process audio through plugin
+  // Process audio through graph
   AudioBuffer<float> buffer(bufferToFill.buffer->getArrayOfWritePointers(),
                             bufferToFill.buffer->getNumChannels(),
                             bufferToFill.startSample, bufferToFill.numSamples);
 
-  activePlugin->processBlock(buffer, midiBuffer);
-
-  // Apply gain
-  float combinedGain = outputGain * masterGain;
-  if (combinedGain != 1.0f)
-    buffer.applyGain(combinedGain);
+  // Process audio through the graph
+  graph->processBlock(buffer, midiBuffer);
 
   // Measure audio levels for meter (post-gain)
   meterSource.measureBlock(buffer);
+}
+
+void PluginHost::setGain(float gain) {
+  currentRowGain = gain;
+  // Apply combined gain
+  if (activePluginGainNode) {
+    if (auto *proc = dynamic_cast<GainProcessor *>(
+            activePluginGainNode->getProcessor())) {
+      proc->setGain(currentRowGain * currentMasterGain);
+    }
+  }
+}
+
+void PluginHost::setMasterGain(float gain) {
+  currentMasterGain = gain;
+  // Apply combined gain to active plugin
+  if (activePluginGainNode) {
+    if (auto *proc = dynamic_cast<GainProcessor *>(
+            activePluginGainNode->getProcessor())) {
+      proc->setGain(currentRowGain * currentMasterGain);
+    }
+  }
 }
 
 //==============================================================================

@@ -56,6 +56,8 @@ private:
   Slider variationBpm1Slider;
   ToggleButton variationBpm2{"BPM var1"};
   Slider variationBpm2Slider;
+    
+    ToggleButton loop{"Loop"};
 
   TextButton selectFolderButton{"Select MIDI Folder"};
   Label folderPathLabel;

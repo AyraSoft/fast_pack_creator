@@ -67,7 +67,13 @@
           file="Source/ProjectSerializer.h"/>
   </MAINGROUP>
   <MODULES>
+    <MODULE id="ayra_audio_processors_engine" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="0"/>
+    <MODULE id="ayra_buffers" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="ayra_dmx" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="ayra_graph" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="ayra_gui" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
+    <MODULE id="ayra_pdf" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="ayra_plugins_manager" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="ayra_project_base" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="ayra_rapid_thread_pool" showAllCode="1" useLocalCopy="0"
@@ -83,10 +89,13 @@
     <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_serial" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
   </MODULES>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" extraCompilerFlags="-Wno-deprecated-declarations"
@@ -118,6 +127,14 @@
         <MODULEPATH id="juce_audio_processors_headless" path="../../../../Applications/JUCE/modules"/>
         <MODULEPATH id="ff_meters" path="../../Juce/Juce Modules"/>
         <MODULEPATH id="ayra_rapid_thread_pool" path="../../Juce/Juce Modules"/>
+        <MODULEPATH id="ayra_graph" path="../../Juce/Juce Modules"/>
+        <MODULEPATH id="ayra_audio_processors_engine" path="../../Juce/Juce Modules/Ayra-Modules"/>
+        <MODULEPATH id="juce_dsp" path="../../../../Applications/JUCE/modules"/>
+        <MODULEPATH id="ayra_pdf" path="../../Juce/Juce Modules"/>
+        <MODULEPATH id="ayra_dmx" path="../../Juce/Juce Modules"/>
+        <MODULEPATH id="juce_serial" path="../../Juce/Juce Modules/benkuper"/>
+        <MODULEPATH id="ayra_buffers" path="../../Juce/Juce Modules"/>
+        <MODULEPATH id="juce_osc" path="../../../../Applications/JUCE/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>
