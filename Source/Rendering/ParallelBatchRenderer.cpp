@@ -420,17 +420,41 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
       File tempFile = job.outputFile.getSiblingFile(
           job.outputFile.getFileNameWithoutExtension() + "_temp.wav");
 
-      // FFmpeg command: loudnorm filter for EBU R128 normalization
-      // I = target LUFS, TP = true peak limit in dB
-      String ffmpegCommand =
-          "ffmpeg -y -i " + job.outputFile.getFullPathName().quoted() +
-          " -af loudnorm=I=" + String(settings.normalizationLufs, 1) +
-          ":TP=-1.0:LRA=11 " + tempFile.getFullPathName().quoted();
+      // Find FFmpeg - GUI apps don't inherit shell PATH
+      String ffmpegPath = "ffmpeg"; // Default - might work if in app bundle
 
-      DBG("FFmpeg command: " + ffmpegCommand);
+      // Check common macOS paths
+      if (File("/usr/local/bin/ffmpeg").existsAsFile())
+        ffmpegPath = "/usr/local/bin/ffmpeg";
+      else if (File("/opt/homebrew/bin/ffmpeg").existsAsFile())
+        ffmpegPath = "/opt/homebrew/bin/ffmpeg";
+      else if (File("/usr/bin/ffmpeg").existsAsFile())
+        ffmpegPath = "/usr/bin/ffmpeg";
+
+      DBG("Using FFmpeg at: " + ffmpegPath);
+
+      // Build FFmpeg command as StringArray for proper path escaping
+      // loudnorm filter: I = target LUFS, TP = true peak limit, LRA = loudness
+      // range
+      String loudnormFilter =
+          "loudnorm=I=" + String(settings.normalizationLufs, 1) +
+          ":TP=-1.0:LRA=11";
+
+      StringArray ffmpegArgs;
+      ffmpegArgs.add(ffmpegPath); // Use full path instead of just "ffmpeg"
+      ffmpegArgs.add("-y");       // Overwrite output
+      ffmpegArgs.add("-i");
+      ffmpegArgs.add(
+          job.outputFile.getFullPathName()); // Input file (no manual quoting)
+      ffmpegArgs.add("-af");
+      ffmpegArgs.add(loudnormFilter); // Audio filter
+      ffmpegArgs.add(
+          tempFile.getFullPathName()); // Output file (no manual quoting)
+
+      DBG("FFmpeg args: " + ffmpegArgs.joinIntoString(" | "));
 
       ChildProcess ffmpeg;
-      if (ffmpeg.start(ffmpegCommand)) {
+      if (ffmpeg.start(ffmpegArgs)) {
         DBG("FFmpeg started, waiting...");
         ffmpeg.waitForProcessToFinish(120000); // 2 min timeout
 
