@@ -95,6 +95,19 @@ MainComponent::MainComponent() {
 
   configPanel.onMidiPanic = [this] { pluginHost->stopPlayback(); };
 
+  // Playhead mode callback - sync mode to PluginHost
+  configPanel.onPlayheadModeChanged = [this](PlayheadMode mode) {
+    pluginHost->setPlayheadMode(mode);
+  };
+
+  // Sync independent playhead position to PluginHost
+  configPanel.onPlayheadPositionChanged = [this](double ppqPosition) {
+    pluginHost->setIndependentPlayheadPosition(ppqPosition);
+  };
+
+  // Set initial playhead mode
+  pluginHost->setPlayheadMode(configPanel.getPlayheadMode());
+
   setSize(1480, 1000);
 }
 

@@ -193,12 +193,19 @@ void PluginHost::playMidiSequence(const MidiMessageSequence &seq, double bpm) {
   currentSampleCount = 0;
   nextEventIndex = 0;
   playing = true;
+
+  // For AtTrigger mode: reset trigger position when starting playback
+  if (playheadMode == PlayheadMode::AtTrigger) {
+    triggerPpqPosition = 0.0;
+    triggerActive = true;
+  }
 }
 
 void PluginHost::stopPlayback() {
   const ScopedLock sl(midiLock);
 
   playing = false;
+  triggerActive = false;
 
   // Send all notes off
   if (activePluginNode != nullptr) {
@@ -218,6 +225,20 @@ void PluginHost::stopPlayback() {
 void PluginHost::setBpm(double newBpm) { currentBpm = newBpm; }
 
 //==============================================================================
+void PluginHost::setPlayheadMode(PlayheadMode mode) {
+  playheadMode = mode;
+
+  // Reset trigger state when changing mode
+  if (mode != PlayheadMode::AtTrigger) {
+    triggerActive = false;
+  }
+}
+
+void PluginHost::setIndependentPlayheadPosition(double ppqPosition) {
+  independentPpqPosition.store(ppqPosition);
+}
+
+//==============================================================================
 Optional<AudioPlayHead::PositionInfo> PluginHost::getPosition() const {
   AudioPlayHead::PositionInfo info;
 
@@ -226,14 +247,45 @@ Optional<AudioPlayHead::PositionInfo> PluginHost::getPosition() const {
   ts.numerator = 4;
   ts.denominator = 4;
   info.setTimeSignature(ts);
+
+  // Determine PPQ position based on playhead mode
+  double ppqPos = 0.0;
+  bool isCurrentlyPlaying = false;
+
+  switch (playheadMode) {
+  case PlayheadMode::Independent:
+    // Use the global independent playhead position (cycles 0-64 PPQ = 16 bars)
+    ppqPos = independentPpqPosition.load();
+    isCurrentlyPlaying =
+        true; // Always considered "playing" in independent mode
+    break;
+
+  case PlayheadMode::AtTrigger:
+    // Use trigger position if active, otherwise 0
+    if (triggerActive) {
+      ppqPos = triggerPpqPosition;
+      isCurrentlyPlaying = true;
+    } else {
+      ppqPos = 0.0;
+      isCurrentlyPlaying = false;
+    }
+    break;
+
+  case PlayheadMode::NoMoving:
+    // Always return 0
+    ppqPos = 0.0;
+    isCurrentlyPlaying = playing.load();
+    break;
+  }
+
   info.setTimeInSamples(currentSampleCount);
   info.setTimeInSeconds(static_cast<double>(currentSampleCount) /
                         (currentSampleRate > 0 ? currentSampleRate : 44100.0));
 
-  info.setPpqPosition(currentPpqPosition);
-  info.setPpqPositionOfLastBarStart(std::floor(currentPpqPosition / 4.0) * 4.0);
+  info.setPpqPosition(ppqPos);
+  info.setPpqPositionOfLastBarStart(std::floor(ppqPos / 4.0) * 4.0);
 
-  info.setIsPlaying(playing);
+  info.setIsPlaying(isCurrentlyPlaying);
   info.setIsLooping(false);
   info.setIsRecording(false);
 
@@ -273,7 +325,7 @@ void PluginHost::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) {
     if (playing) {
       processMidiPlayback(midiBuffer, numSamples);
 
-      // Advance time
+      // Advance time for MIDI playback (always advances for MIDI event timing)
       double bpm = currentBpm;
       double beatsPerSecond = bpm / 60.0;
       double samplesPerBeat = currentSampleRate / beatsPerSecond;
@@ -281,6 +333,17 @@ void PluginHost::getNextAudioBlock(const AudioSourceChannelInfo &bufferToFill) {
 
       currentPpqPosition += beatsInBlock;
       currentSampleCount += numSamples;
+
+      // For AtTrigger mode: advance trigger position and check 4-bar limit
+      if (playheadMode == PlayheadMode::AtTrigger && triggerActive) {
+        triggerPpqPosition += beatsInBlock;
+
+        // Stop after 4 bars (16 beats in 4/4)
+        if (triggerPpqPosition >= 16.0) {
+          triggerActive = false;
+          triggerPpqPosition = 0.0;
+        }
+      }
     }
   }
 

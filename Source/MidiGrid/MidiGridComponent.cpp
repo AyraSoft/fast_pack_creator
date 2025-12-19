@@ -254,7 +254,10 @@ void MidiGridComponent::rebuildRowHeaders() {
     header->onSelected = [this, row] { handleRowSelection(row); };
 
     // Connect macro toggle to toggle all cells in this row
-    header->onMacroToggle = [this, row] { toggleRowRenderizable(row); };
+      header->onMacroToggle = [this, row] {
+          toggleRowRenderizable(row);
+          resized();
+      };
 
     // Handle volume change
     header->onVolumeChanged = [this, row](float db) {
@@ -299,7 +302,10 @@ void MidiGridComponent::rebuildTable() {
                       COLUMN_HEADER_HEIGHT);
 
     // Connect macro toggle to toggle all cells in this column
-    header->onMacroToggle = [this, col] { toggleColumnRenderizable(col); };
+      header->onMacroToggle = [this, col] {
+          toggleColumnRenderizable(col);
+          resized();
+      };
 
     columnHeaders.add(header);
     columnHeaderContainer.addAndMakeVisible(header);
@@ -465,13 +471,13 @@ void MidiGridComponent::toggleColumnRenderizable(int columnIndex) {
 void MidiGridComponent::renderizableAllOn() {
   for (auto &row : cellRenderizableState)
     std::fill(row.begin(), row.end(), true);
-  table.repaint();
+    resized();
 }
 
 void MidiGridComponent::renderizableAllOff() {
   for (auto &row : cellRenderizableState)
     std::fill(row.begin(), row.end(), false);
-  table.repaint();
+    resized();
 }
 
 // REMOVED getCellAt implementation

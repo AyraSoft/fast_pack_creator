@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "../ConfigurationPanel.h"
 #include <JuceHeader.h>
 
 class GainProcessor : public AudioProcessor {
@@ -80,6 +81,18 @@ public:
   void setBpm(double newBpm);
 
   //==============================================================================
+  // Playhead mode control
+  void setPlayheadMode(PlayheadMode mode);
+  PlayheadMode getPlayheadMode() const { return playheadMode; }
+
+  // For Independent mode: set the global playhead position from
+  // ConfigurationPanel
+  void setIndependentPlayheadPosition(double ppqPosition);
+  double getIndependentPlayheadPosition() const {
+    return independentPpqPosition;
+  }
+
+  //==============================================================================
   // AudioPlayHead implementation
   juce::Optional<AudioPlayHead::PositionInfo> getPosition() const override;
 
@@ -133,6 +146,12 @@ private:
   double currentPpqPosition = 0.0;
   std::atomic<int64> currentSampleCount{0};
   int nextEventIndex = 0;
+
+  // Playhead mode state
+  PlayheadMode playheadMode = PlayheadMode::Independent;
+  std::atomic<double> independentPpqPosition{0.0};
+  double triggerPpqPosition = 0.0; // For AtTrigger mode
+  bool triggerActive = false;      // For AtTrigger mode
 
   // Audio processing
   double currentSampleRate = 44100.0;
