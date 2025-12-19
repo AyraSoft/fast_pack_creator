@@ -247,9 +247,9 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
     double originalMidiDuration =
         MidiPlayer::getMidiFileDuration(job.midiFile, job.bpm);
 
-    // For seamless loops: duplicate MIDI (play it twice) so second half has
-    // tail from first
-    bool doSeamlessLoop = settings.loop && settings.seamlessLoop;
+    // For seamless: duplicate MIDI (play it twice) so second half has
+    // tail from first - applies to both Loop and Trail modes
+    bool doSeamlessLoop = settings.seamlessLoop;
     if (doSeamlessLoop) {
       // Create duplicated MIDI events offset by originalMidiDuration (full
       // bar-rounded duration)
@@ -412,9 +412,18 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
         finalEndTime = barDuration;
 
       finalSamples = static_cast<int64>(finalEndTime * settings.sampleRate);
+
+      // For seamless trail: skip the first half and keep only the second half
+      if (doSeamlessLoop) {
+        startSampleOffset =
+            static_cast<int64>(originalMidiDuration * settings.sampleRate);
+        DBG("Seamless trail: keeping samples from " +
+            String(startSampleOffset) +
+            " (original duration: " + String(originalMidiDuration) + "s)");
+      }
     }
 
-    finalSamples = jmin(finalSamples, totalSamples);
+    finalSamples = jmin(finalSamples, totalSamples - startSampleOffset);
 
     // 7. Write to file
     job.outputFile.getParentDirectory().createDirectory();
