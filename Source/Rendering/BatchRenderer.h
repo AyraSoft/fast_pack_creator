@@ -19,7 +19,7 @@ class BatchRenderer : public Thread, public AsyncUpdater {
 public:
   //==============================================================================
   struct RenderSettings {
-    double sampleRate = 48000.0;
+    double sampleRate = 44100.0;
     int bitDepth = 24;
     double bpm = 120.0;
     float silenceThresholdDb = -50.0f;

@@ -35,6 +35,7 @@ public:
   bool isVariation2Enabled() const;
   double getVariation2Bpm() const;
   bool isLoopEnabled() const { return loop.getToggleState(); }
+  bool isSeamlessLoopEnabled() const { return seamlessLoop.getToggleState(); }
   bool isNormalizationEnabled() const {
     return applyNormalization.getToggleState();
   }
@@ -65,6 +66,7 @@ private:
   Slider variationBpm2Slider;
 
   ToggleButton loop{"Loop"};
+  ToggleButton seamlessLoop{"Seamless"}; // Render MIDI twice, keep second half
   ToggleButton applyNormalization{"Normalize"};
   Slider normalizationHeadroom;
 

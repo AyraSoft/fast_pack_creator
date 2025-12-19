@@ -93,10 +93,13 @@ private:
   //==============================================================================
   // Methods
   void loadMidiFolder(const File &folder);
+  void filterShortMidiFiles(const File &folder); // Remove MIDI files < 4 bars
   void rebuildGrid();
   void startRender();
   void showAudioSettings();
   void showPluginList();
+  void runBatchNormalization(
+      const File &outputDir); // Post-render LUFS normalization
 
   // Project save/load
   void newProject();

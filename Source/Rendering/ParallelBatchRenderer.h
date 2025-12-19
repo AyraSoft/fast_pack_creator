@@ -24,14 +24,16 @@ class ParallelBatchRenderer : public Timer {
 public:
   //==============================================================================
   struct RenderSettings {
-    double sampleRate = 48000.0;
+    double sampleRate = 44100.0;
     int bitDepth = 24;
     double bpm = 120.0;
     float silenceThresholdDb = -50.0f;
     float masterGainDb = 0.0f; // Master gain in dB to apply to all renders
     bool loop =
         false; // If true, truncate exactly at MIDI end for seamless looping
-    bool normalize = false; // If true, apply LUFS normalization via FFmpeg
+    bool seamlessLoop = false; // If true, render MIDI twice and keep second
+                               // half (includes tail)
+    bool normalize = false;    // If true, apply LUFS normalization via FFmpeg
     double normalizationLufs = -12.0; // Target LUFS level
   };
 

@@ -61,6 +61,10 @@ ConfigurationPanel::ConfigurationPanel() {
   addAndMakeVisible(loop);
   loop.setToggleState(true, dontSendNotification);
 
+  addAndMakeVisible(seamlessLoop);
+  seamlessLoop.setToggleState(
+      true, dontSendNotification); // Enable by default for perfect loops
+
   addAndMakeVisible(applyNormalization);
   applyNormalization.setToggleState(true, dontSendNotification);
   addAndMakeVisible(normalizationHeadroom);
@@ -124,7 +128,8 @@ void ConfigurationPanel::resized() {
   variationBpm2Slider.setBounds(row1.removeFromLeft(60));
 
   row1.removeFromLeft(40);
-  loop.setBounds(row1.removeFromLeft(80));
+  loop.setBounds(row1.removeFromLeft(60));
+  seamlessLoop.setBounds(row1.removeFromLeft(80));
 
   row1.removeFromLeft(40);
   applyNormalization.setBounds(row1.removeFromLeft(80));

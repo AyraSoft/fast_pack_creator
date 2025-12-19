@@ -52,7 +52,7 @@ ParallelBatchRenderer::ParallelBatchRenderer(ayra::PluginsManager &pm,
                                              const File &outputDir)
     : pluginsManager(pm), settings(settings), outputDirectory(outputDir) {
   // Prepare thread pool
-  threadPool.prepare(settings.sampleRate, 512);
+  threadPool.prepare(settings.sampleRate, 2048);
 }
 
 ParallelBatchRenderer::~ParallelBatchRenderer() { cancelRendering(); }
@@ -216,7 +216,7 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
     descPref.pluginDescription = job.pluginDesc;
 
     auto plugin = pluginsManager.createPluginInstance(
-        descPref, settings.sampleRate, 512, errorMessage);
+        descPref, settings.sampleRate, 2048, errorMessage);
 
     if (plugin == nullptr) {
       lastError = "Failed to load plugin: " + errorMessage;
@@ -235,7 +235,7 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
     plugin->setPlayHead(&playhead);
 
     // Prepare plugin
-    plugin->prepareToPlay(settings.sampleRate, 512);
+    plugin->prepareToPlay(settings.sampleRate, 2048);
 
     // 2. Load MIDI and apply transformations (use job.bpm, not settings.bpm)
     auto midiSeq = MidiPlayer::loadMidiFile(job.midiFile, job.bpm);
@@ -243,9 +243,32 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
                                                job.velocityMultiplier);
 
     double midiDuration = MidiPlayer::getSequenceDuration(midiSeq);
+    // Use getMidiFileDuration for loop duration - it rounds to complete bars
+    double originalMidiDuration =
+        MidiPlayer::getMidiFileDuration(job.midiFile, job.bpm);
 
-    // Add extra time for synth tails (10 seconds)
-    double renderDuration = midiDuration + 10.0;
+    // For seamless loops: duplicate MIDI (play it twice) so second half has
+    // tail from first
+    bool doSeamlessLoop = settings.loop && settings.seamlessLoop;
+    if (doSeamlessLoop) {
+      // Create duplicated MIDI events offset by originalMidiDuration (full
+      // bar-rounded duration)
+      int numEvents = midiSeq.getNumEvents();
+      for (int i = 0; i < numEvents; ++i) {
+        auto *event = midiSeq.getEventPointer(i);
+        MidiMessage newMsg = event->message;
+        newMsg.setTimeStamp(newMsg.getTimeStamp() + originalMidiDuration);
+        midiSeq.addEvent(newMsg);
+      }
+      midiSeq.sort();
+      DBG("Seamless loop: duplicated MIDI with offset = " +
+          String(originalMidiDuration) +
+          "s, total duration = " + String(originalMidiDuration * 2) + "s");
+    }
+
+    // Calculate render duration
+    double renderDuration = doSeamlessLoop ? (originalMidiDuration * 2 + 5.0)
+                                           : (midiDuration + 10.0);
 
     // 3. Render through plugin
     int64 totalSamples =
@@ -257,7 +280,7 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
     AudioBuffer<float> fullBuffer(numChannels, static_cast<int>(totalSamples));
     fullBuffer.clear();
 
-    const int blockSize = 512;
+    const int blockSize = 2048;
     int64 samplePos = 0;
     int midiEventIndex = 0;
 
@@ -336,14 +359,24 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
 
     // 5. Determine final sample count based on loop mode
     int64 finalSamples;
+    int64 startSampleOffset = 0; // For seamless loop, we skip the first half
 
     if (settings.loop) {
-      // Loop mode: truncate exactly at MIDI file duration for seamless looping
-      // Use getMidiFileDuration which reads the actual MIDI file length in
-      // ticks
-      double loopDuration =
-          MidiPlayer::getMidiFileDuration(job.midiFile, job.bpm);
-      finalSamples = static_cast<int64>(loopDuration * settings.sampleRate);
+      // Loop mode: truncate exactly at MIDI duration for seamless looping
+      // Use originalMidiDuration which is the single loop duration
+      finalSamples =
+          static_cast<int64>(originalMidiDuration * settings.sampleRate);
+
+      // For seamless loop: skip the first half (first loop iteration without
+      // tail) and keep only the second half (which has the tail from the first
+      // iteration)
+      if (doSeamlessLoop) {
+        startSampleOffset =
+            static_cast<int64>(originalMidiDuration * settings.sampleRate);
+        DBG("Seamless loop: keeping samples from " + String(startSampleOffset) +
+            " to " + String(startSampleOffset + finalSamples) +
+            " (original duration: " + String(originalMidiDuration) + "s)");
+      }
     } else {
       // Normal mode: find silence start and snap to next bar
       float thresholdLinear =
@@ -406,82 +439,15 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
 
     outputStream.release(); // Writer now owns the stream
 
-    writer->writeFromAudioSampleBuffer(fullBuffer, 0,
+    writer->writeFromAudioSampleBuffer(fullBuffer,
+                                       static_cast<int>(startSampleOffset),
                                        static_cast<int>(finalSamples));
 
     // Close writer before normalizing
     writer.reset();
 
-    // 8. Apply LUFS normalization via FFmpeg if enabled
-    DBG("Normalization setting: " + String(settings.normalize ? "ON" : "OFF") +
-        " LUFS target: " + String(settings.normalizationLufs));
-
-    if (settings.normalize) {
-      File tempFile = job.outputFile.getSiblingFile(
-          job.outputFile.getFileNameWithoutExtension() + "_temp.wav");
-
-      // Find FFmpeg - GUI apps don't inherit shell PATH
-      String ffmpegPath = "ffmpeg"; // Default - might work if in app bundle
-
-      // Check common macOS paths
-      if (File("/usr/local/bin/ffmpeg").existsAsFile())
-        ffmpegPath = "/usr/local/bin/ffmpeg";
-      else if (File("/opt/homebrew/bin/ffmpeg").existsAsFile())
-        ffmpegPath = "/opt/homebrew/bin/ffmpeg";
-      else if (File("/usr/bin/ffmpeg").existsAsFile())
-        ffmpegPath = "/usr/bin/ffmpeg";
-
-      DBG("Using FFmpeg at: " + ffmpegPath);
-
-      // Build FFmpeg command as StringArray for proper path escaping
-      // loudnorm filter: I = target LUFS, TP = true peak limit, LRA = loudness
-      // range
-      String loudnormFilter =
-          "loudnorm=I=" + String(settings.normalizationLufs, 1) +
-          ":TP=-1.0:LRA=11";
-
-      StringArray ffmpegArgs;
-      ffmpegArgs.add(ffmpegPath); // Use full path instead of just "ffmpeg"
-      ffmpegArgs.add("-y");       // Overwrite output
-      ffmpegArgs.add("-i");
-      ffmpegArgs.add(
-          job.outputFile.getFullPathName()); // Input file (no manual quoting)
-      ffmpegArgs.add("-af");
-      ffmpegArgs.add(loudnormFilter); // Audio filter
-      ffmpegArgs.add(
-          tempFile.getFullPathName()); // Output file (no manual quoting)
-
-      DBG("FFmpeg args: " + ffmpegArgs.joinIntoString(" | "));
-
-      ChildProcess ffmpeg;
-      if (ffmpeg.start(ffmpegArgs)) {
-        DBG("FFmpeg started, waiting...");
-        ffmpeg.waitForProcessToFinish(120000); // 2 min timeout
-
-        int exitCode = ffmpeg.getExitCode();
-        DBG("FFmpeg exit code: " + String(exitCode));
-        DBG("Temp file exists: " +
-            String(tempFile.existsAsFile() ? "YES" : "NO"));
-
-        if (exitCode == 0 && tempFile.existsAsFile()) {
-          // Replace original with normalized version
-          job.outputFile.deleteFile();
-          bool moved = tempFile.moveFileTo(job.outputFile);
-          DBG("Normalized and replaced: " + job.outputFile.getFileName() +
-              " (move success: " + String(moved ? "YES" : "NO") + ")");
-        } else {
-          DBG("FFmpeg normalization failed for: " +
-              job.outputFile.getFileName() + " exit code: " + String(exitCode));
-          String ffmpegOutput = ffmpeg.readAllProcessOutput();
-          DBG("FFmpeg output: " + ffmpegOutput);
-          tempFile.deleteFile();
-          // Keep original unnormalized file
-        }
-      } else {
-        DBG("Could not start FFmpeg. Make sure it's installed and in PATH.");
-        ffmpegMissing.store(true);
-      }
-    }
+    // 8. Normalization is now done as batch post-processing after all renders
+    // complete (see MainComponent::runBatchNormalization)
 
     // 9. Validate output file - check for empty or silent files
     if (job.outputFile.existsAsFile()) {

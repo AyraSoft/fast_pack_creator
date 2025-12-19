@@ -136,7 +136,7 @@ private:
 
   // Audio processing
   double currentSampleRate = 44100.0;
-  int currentBlockSize = 512;
+  int currentBlockSize = 2048;
 
   MidiBuffer pendingMidiBuffer;
   CriticalSection midiLock;

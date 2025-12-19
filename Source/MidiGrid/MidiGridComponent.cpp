@@ -190,7 +190,7 @@ void MidiGridComponent::loadPluginToAllRows() {
           for (auto *header : rowHeaders) {
             String errorMessage;
             auto plugin = pluginsManager.createPluginInstance(
-                desc, 48000.0, 512, errorMessage);
+                desc, 44100.0, 2048, errorMessage);
 
             if (plugin != nullptr) {
               header->setPlugin(std::move(plugin), desc.pluginDescription);

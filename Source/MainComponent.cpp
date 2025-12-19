@@ -51,6 +51,7 @@ MainComponent::MainComponent() {
   };
 
   configPanel.onMidiFolderSelected = [this](const File &folder) {
+    filterShortMidiFiles(folder); // Remove MIDI files < 4 bars
     loadMidiFolder(folder);
   };
 
@@ -151,6 +152,192 @@ void MainComponent::resized() {
 }
 
 //==============================================================================
+void MainComponent::runBatchNormalization(const File &outputDir) {
+  // Find FFmpeg
+  String ffmpegPath = "ffmpeg";
+  if (File("/usr/local/bin/ffmpeg").existsAsFile())
+    ffmpegPath = "/usr/local/bin/ffmpeg";
+  else if (File("/opt/homebrew/bin/ffmpeg").existsAsFile())
+    ffmpegPath = "/opt/homebrew/bin/ffmpeg";
+  else {
+    AlertWindow::showMessageBoxAsync(
+        MessageBoxIconType::WarningIcon, "FFmpeg Not Found",
+        "FFmpeg is required for LUFS normalization.\n\n"
+        "Install with: brew install ffmpeg\n\n"
+        "Files were rendered but NOT normalized.");
+    return;
+  }
+
+  // Get normalization settings
+  double targetLufs = configPanel.getNormalizationHeadroom();
+  int sampleRate = 44100; // Default sample rate
+  int bitDepth = 24;      // Default bit depth
+  String codec = (bitDepth == 24) ? "pcm_s24le" : "pcm_s16le";
+
+  String loudnormFilter =
+      "loudnorm=I=" + String(targetLufs, 1) + ":TP=-1.0:LRA=11";
+
+  DBG("Starting batch normalization: " + String(targetLufs, 1) + " LUFS");
+
+  // Find all WAV files recursively in output directory
+  Array<File> wavFiles;
+  for (const auto &entry :
+       RangedDirectoryIterator(outputDir, true, "*.wav", File::findFiles)) {
+    wavFiles.add(entry.getFile());
+  }
+
+  DBG("Found " + String(wavFiles.size()) + " WAV files to normalize");
+
+  int normalized = 0;
+  int failed = 0;
+
+  for (const auto &wavFile : wavFiles) {
+    File tempFile = wavFile.getSiblingFile(
+        wavFile.getFileNameWithoutExtension() + "_norm_temp.wav");
+
+    StringArray ffmpegArgs;
+    ffmpegArgs.add(ffmpegPath);
+    ffmpegArgs.add("-y");
+    ffmpegArgs.add("-i");
+    ffmpegArgs.add(wavFile.getFullPathName());
+    ffmpegArgs.add("-af");
+    ffmpegArgs.add(loudnormFilter);
+    ffmpegArgs.add("-ar");
+    ffmpegArgs.add(String(sampleRate));
+    ffmpegArgs.add("-c:a");
+    ffmpegArgs.add(codec);
+    ffmpegArgs.add(tempFile.getFullPathName());
+
+    ChildProcess ffmpeg;
+    if (ffmpeg.start(ffmpegArgs)) {
+      ffmpeg.waitForProcessToFinish(30000); // 30 sec timeout per file
+
+      if (ffmpeg.getExitCode() == 0 && tempFile.existsAsFile()) {
+        wavFile.deleteFile();
+        tempFile.moveFileTo(wavFile);
+        normalized++;
+      } else {
+        tempFile.deleteFile();
+        failed++;
+        DBG("Failed to normalize: " + wavFile.getFileName());
+      }
+    } else {
+      failed++;
+    }
+  }
+
+  DBG("Normalization complete: " + String(normalized) + " OK, " +
+      String(failed) + " failed");
+
+  if (failed > 0) {
+    AlertWindow::showMessageBoxAsync(
+        MessageBoxIconType::WarningIcon, "Normalization Partial",
+        "Normalized " + String(normalized) + " files.\n" + String(failed) +
+            " files failed to normalize.");
+  }
+}
+
+//==============================================================================
+void MainComponent::filterShortMidiFiles(const File &folder) {
+  // Check if midicsv is installed
+  String midicsvPath = "midicsv";
+  if (File("/usr/local/bin/midicsv").existsAsFile())
+    midicsvPath = "/usr/local/bin/midicsv";
+  else if (File("/opt/homebrew/bin/midicsv").existsAsFile())
+    midicsvPath = "/opt/homebrew/bin/midicsv";
+  else {
+    // Check if midicsv is available at all
+    ChildProcess checkMidicsv;
+    if (!checkMidicsv.start("which midicsv")) {
+      AlertWindow::showMessageBoxAsync(
+          MessageBoxIconType::WarningIcon, "midicsv Not Found",
+          "midicsv is required to filter short MIDI files.\n\n"
+          "Install with: brew install midicsv\n\n"
+          "MIDI files will be loaded without filtering.");
+      return;
+    }
+    checkMidicsv.waitForProcessToFinish(5000);
+    if (checkMidicsv.getExitCode() != 0) {
+      AlertWindow::showMessageBoxAsync(
+          MessageBoxIconType::WarningIcon, "midicsv Not Found",
+          "midicsv is required to filter short MIDI files.\n\n"
+          "Install with: brew install midicsv\n\n"
+          "MIDI files will be loaded without filtering.");
+      return;
+    }
+  }
+
+  DBG("Using midicsv at: " + midicsvPath);
+
+  // Find all MIDI files
+  Array<File> filesToCheck;
+  for (const auto &entry : RangedDirectoryIterator(
+           folder, false, "*.mid;*.midi", File::findFiles)) {
+    filesToCheck.add(entry.getFile());
+  }
+
+  StringArray filesToDelete;
+
+  for (const auto &midiFile : filesToCheck) {
+    // Run midicsv on the file
+    StringArray midicsvArgs;
+    midicsvArgs.add(midicsvPath);
+    midicsvArgs.add(midiFile.getFullPathName());
+
+    ChildProcess midicsv;
+    if (midicsv.start(midicsvArgs)) {
+      String output = midicsv.readAllProcessOutput();
+      midicsv.waitForProcessToFinish(10000);
+
+      // Parse PPQ from Header line (6th field)
+      int ppq = 0;
+      int lastTick = 0;
+
+      StringArray lines = StringArray::fromLines(output);
+      for (const auto &line : lines) {
+        if (line.contains("Header")) {
+          // Format: track, time, Header, format, nTracks, division
+          StringArray parts = StringArray::fromTokens(line, ",", "");
+          if (parts.size() >= 6)
+            ppq = parts[5].trim().getIntValue();
+        }
+
+        // Get last tick (second field of each line)
+        StringArray parts = StringArray::fromTokens(line, ",", "");
+        if (parts.size() >= 2) {
+          int tick = parts[1].trim().getIntValue();
+          if (tick > lastTick)
+            lastTick = tick;
+        }
+      }
+
+      // Check if duration is less than 4 bars (16 beats = ppq * 16)
+      if (ppq > 0 && lastTick > 0) {
+        int threshold = ppq * 16; // 4 bars in 4/4
+        if (lastTick < threshold) {
+          filesToDelete.add(midiFile.getFileName());
+          midiFile.deleteFile();
+          DBG("Deleted short MIDI: " + midiFile.getFileName() +
+              " (ticks: " + String(lastTick) + " < " + String(threshold) + ")");
+        }
+      }
+    }
+  }
+
+  // Show summary if files were deleted
+  if (!filesToDelete.isEmpty()) {
+    String message = "Removed " + String(filesToDelete.size()) +
+                     " MIDI file(s) shorter than 4 bars:\n\n";
+    for (int i = 0; i < jmin(10, filesToDelete.size()); ++i)
+      message += "• " + filesToDelete[i] + "\n";
+    if (filesToDelete.size() > 10)
+      message += "...and " + String(filesToDelete.size() - 10) + " more.";
+
+    AlertWindow::showMessageBoxAsync(MessageBoxIconType::InfoIcon,
+                                     "MIDI Files Filtered", message);
+  }
+}
+
 void MainComponent::loadMidiFolder(const File &folder) {
   midiFolder = folder;
   midiFiles.clear();
@@ -233,16 +420,18 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
     pluginHost->setBpm(bpm);
     configPanel.setBpm(bpm);
 
-    // Check if FFmpeg was missing during normalization
-    bool ffmpegWasMissing =
-        parallelRenderer && parallelRenderer->wasFfmpegMissing();
+    // Run batch normalization if enabled
+    bool normalizeEnabled = configPanel.isNormalizationEnabled();
+    if (normalizeEnabled) {
+      runBatchNormalization(outputDir);
+    }
 
     // Get list of problematic files
     StringArray problemFiles = parallelRenderer
                                    ? parallelRenderer->getProblematicFiles()
                                    : StringArray();
 
-    MessageManager::callAsync([this, ffmpegWasMissing, problemFiles] {
+    MessageManager::callAsync([this, normalizeEnabled, problemFiles] {
       if (progressWindow) {
         progressWindow->setVisible(false);
         progressWindow.reset();
@@ -259,12 +448,8 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
         for (auto &file : problemFiles)
           message += "• " + file + "\n";
         message += "\nPlease check these files manually.";
-      } else if (ffmpegWasMissing) {
-        icon = MessageBoxIconType::WarningIcon;
-        title = "Rendering Complete - Warning";
-        message = "Files rendered but NORMALIZATION WAS SKIPPED!\n\n"
-                  "FFmpeg was not found.\n"
-                  "Install FFmpeg with: brew install ffmpeg";
+      } else if (normalizeEnabled) {
+        message = "All files rendered and normalized successfully!";
       } else {
         message = "All files have been rendered successfully!";
       }
@@ -293,6 +478,7 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
   settings.silenceThresholdDb = -50.0f;
   settings.masterGainDb = static_cast<float>(masterVolume.getValue());
   settings.loop = configPanel.isLoopEnabled();
+  settings.seamlessLoop = configPanel.isSeamlessLoopEnabled();
   settings.normalize = configPanel.isNormalizationEnabled();
   settings.normalizationLufs = configPanel.getNormalizationHeadroom();
 

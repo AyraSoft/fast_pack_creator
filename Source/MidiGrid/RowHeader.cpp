@@ -182,8 +182,8 @@ void RowHeader::loadPlugin(const ayra::PluginDescriptionAndPreference &desc) {
   String errorMessage;
 
   plugin = pluginsManager.createPluginInstance(desc,
-                                               48000.0, // Default sample rate
-                                               512,     // Default block size
+                                               44100.0, // Default sample rate
+                                               2048,     // Default block size
                                                errorMessage);
 
   if (plugin != nullptr) {

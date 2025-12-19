@@ -103,7 +103,7 @@ bool BatchRenderer::renderSingleJob(const RenderJob &job) {
     descPref.pluginDescription = job.pluginDesc;
 
     auto plugin = pluginsManager.createPluginInstance(
-        descPref, settings.sampleRate, 512, errorMessage);
+        descPref, settings.sampleRate, 2048, errorMessage);
 
     if (plugin == nullptr) {
       lastError = "Failed to load plugin: " + errorMessage;
@@ -117,7 +117,7 @@ bool BatchRenderer::renderSingleJob(const RenderJob &job) {
     }
 
     // Prepare plugin
-    plugin->prepareToPlay(settings.sampleRate, 512);
+    plugin->prepareToPlay(settings.sampleRate, 2048);
 
     // 2. Load MIDI and apply transformations
     auto midiSeq = MidiPlayer::loadMidiFile(job.midiFile, settings.bpm);
@@ -139,7 +139,7 @@ bool BatchRenderer::renderSingleJob(const RenderJob &job) {
     AudioBuffer<float> fullBuffer(numChannels, static_cast<int>(totalSamples));
     fullBuffer.clear();
 
-    const int blockSize = 512;
+    const int blockSize = 2048;
     int64 samplePos = 0;
     int midiEventIndex = 0;
 
