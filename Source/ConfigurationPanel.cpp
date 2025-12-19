@@ -30,8 +30,8 @@ ConfigurationPanel::ConfigurationPanel() {
   // BPM slider - immediate updates on change
   bpmSlider.setRange(20.0, 300.0, 0.1);
   bpmSlider.setValue(120.0, dontSendNotification);
-  bpmSlider.setSliderStyle(Slider::LinearHorizontal);
-  bpmSlider.setTextBoxStyle(Slider::TextBoxRight, false, 50, 24);
+  bpmSlider.setSliderStyle(Slider::LinearBar);
+
   bpmSlider.onValueChange = [this] {
     if (onBpmChanged)
       onBpmChanged(bpmSlider.getValue());
@@ -42,25 +42,31 @@ ConfigurationPanel::ConfigurationPanel() {
 
   // Variation 1
   addAndMakeVisible(variationBpm1);
-  variationBpm1.setToggleState(true, dontSendNotification); // Default on
+  variationBpm1.setToggleState(false, dontSendNotification); // Default on
 
   addAndMakeVisible(variationBpm1Slider);
   variationBpm1Slider.setSliderStyle(Slider::LinearBar);
   variationBpm1Slider.setRange(20.0, 300.0, 1.0);
-  variationBpm1Slider.setValue(120.0, dontSendNotification);
-  variationBpm1Slider.setTextBoxStyle(Slider::TextBoxLeft, false, 80, 20);
+  variationBpm1Slider.setValue(80.0, dontSendNotification);
 
   // Variation 2
   addAndMakeVisible(variationBpm2);
-  variationBpm2.setToggleState(true, dontSendNotification);
+  variationBpm2.setToggleState(false, dontSendNotification);
 
   addAndMakeVisible(variationBpm2Slider);
   variationBpm2Slider.setSliderStyle(Slider::LinearBar);
   variationBpm2Slider.setRange(20.0, 300.0, 1.0);
-  variationBpm2Slider.setValue(120.0, dontSendNotification);
-  variationBpm2Slider.setTextBoxStyle(Slider::TextBoxLeft, false, 80, 20);
-    addAndMakeVisible(loop);
-    loop.setToggleState(true, dontSendNotification);
+  variationBpm2Slider.setValue(160.0, dontSendNotification);
+
+  addAndMakeVisible(loop);
+  loop.setToggleState(true, dontSendNotification);
+
+  addAndMakeVisible(applyNormalization);
+  applyNormalization.setToggleState(true, dontSendNotification);
+  addAndMakeVisible(normalizationHeadroom);
+  normalizationHeadroom.setSliderStyle(Slider::LinearBar);
+  normalizationHeadroom.setRange(-20.0, 0.0, 1.0);
+  normalizationHeadroom.setValue(-12.0, dontSendNotification);
 
   // Folder selection
   selectFolderButton.onClick = [this] {
@@ -116,9 +122,13 @@ void ConfigurationPanel::resized() {
   row1.removeFromLeft(10);
   variationBpm2.setBounds(row1.removeFromLeft(80));
   variationBpm2Slider.setBounds(row1.removeFromLeft(60));
-    
-    row1.removeFromLeft(40);
-    loop.setBounds(row1.removeFromLeft(80));
+
+  row1.removeFromLeft(40);
+  loop.setBounds(row1.removeFromLeft(80));
+
+  row1.removeFromLeft(40);
+  applyNormalization.setBounds(row1.removeFromLeft(80));
+  normalizationHeadroom.setBounds(row1.removeFromLeft(80));
 
   bounds.removeFromTop(5);
 

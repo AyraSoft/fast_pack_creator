@@ -19,7 +19,6 @@
 #include "Rendering/ParallelBatchRenderer.h"
 #include <JuceHeader.h>
 
-
 //==============================================================================
 class MainComponent : public Component,
                       public ChangeListener,
@@ -73,6 +72,7 @@ private:
   std::unique_ptr<DialogWindow> progressWindow;
   std::unique_ptr<ProgressBar> progressBar;
   double renderProgress = 0.0;
+  File currentOutputDir; // Stored for multi-pass rendering
 
   // Level meter
   foleys::LevelMeterLookAndFeel meterLnF;

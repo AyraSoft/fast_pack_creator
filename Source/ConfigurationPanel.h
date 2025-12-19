@@ -35,6 +35,12 @@ public:
   bool isVariation2Enabled() const;
   double getVariation2Bpm() const;
   bool isLoopEnabled() const { return loop.getToggleState(); }
+  bool isNormalizationEnabled() const {
+    return applyNormalization.getToggleState();
+  }
+  double getNormalizationHeadroom() const {
+    return normalizationHeadroom.getValue();
+  }
 
   //==============================================================================
   // Callbacks
@@ -59,6 +65,8 @@ private:
   Slider variationBpm2Slider;
 
   ToggleButton loop{"Loop"};
+  ToggleButton applyNormalization{"Normalize"};
+  Slider normalizationHeadroom;
 
   TextButton selectFolderButton{"Select MIDI Folder"};
   Label folderPathLabel;

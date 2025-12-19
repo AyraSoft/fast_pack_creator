@@ -14,6 +14,39 @@
 #include "../Audio/MidiPlayer.h"
 
 //==============================================================================
+// Custom playhead for offline rendering - provides tempo info to plugins (JUCE
+// 8 API)
+class OfflinePlayHead : public AudioPlayHead {
+public:
+  OfflinePlayHead(double bpmValue, double sr)
+      : playheadBpm(bpmValue), playheadSampleRate(sr) {}
+
+  Optional<PositionInfo> getPosition() const override {
+    PositionInfo info;
+    info.setBpm(playheadBpm);
+    info.setTimeSignature(TimeSignature{4, 4});
+    info.setTimeInSamples(currentSample);
+    info.setTimeInSeconds(static_cast<double>(currentSample) /
+                          playheadSampleRate);
+
+    double timeInSec = static_cast<double>(currentSample) / playheadSampleRate;
+    info.setPpqPosition((timeInSec / 60.0) * playheadBpm);
+    info.setPpqPositionOfLastBarStart(0.0);
+    info.setIsPlaying(true);
+    info.setIsRecording(false);
+    info.setIsLooping(false);
+    return info;
+  }
+
+  void setPosition(int64 sample) { currentSample = sample; }
+
+private:
+  double playheadBpm;
+  double playheadSampleRate;
+  int64 currentSample = 0;
+};
+
+//==============================================================================
 ParallelBatchRenderer::ParallelBatchRenderer(ayra::PluginsManager &pm,
                                              const RenderSettings &settings,
                                              const File &outputDir)
@@ -196,11 +229,16 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
                                   static_cast<int>(job.pluginState.getSize()));
     }
 
+    // Create playhead with job's BPM for tempo-synced plugins (arpeggiators,
+    // etc.)
+    OfflinePlayHead playhead(job.bpm, settings.sampleRate);
+    plugin->setPlayHead(&playhead);
+
     // Prepare plugin
     plugin->prepareToPlay(settings.sampleRate, 512);
 
-    // 2. Load MIDI and apply transformations
-    auto midiSeq = MidiPlayer::loadMidiFile(job.midiFile, settings.bpm);
+    // 2. Load MIDI and apply transformations (use job.bpm, not settings.bpm)
+    auto midiSeq = MidiPlayer::loadMidiFile(job.midiFile, job.bpm);
     midiSeq = MidiPlayer::applyTransformations(midiSeq, job.pitchOffset,
                                                job.velocityMultiplier);
 
@@ -264,6 +302,9 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
         }
       }
 
+      // Update playhead position for tempo-synced plugins
+      playhead.setPosition(samplePos);
+
       // Process block through plugin
       plugin->processBlock(blockBuffer, midiBuffer);
 
@@ -301,7 +342,7 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
       // Use getMidiFileDuration which reads the actual MIDI file length in
       // ticks
       double loopDuration =
-          MidiPlayer::getMidiFileDuration(job.midiFile, settings.bpm);
+          MidiPlayer::getMidiFileDuration(job.midiFile, job.bpm);
       finalSamples = static_cast<int64>(loopDuration * settings.sampleRate);
     } else {
       // Normal mode: find silence start and snap to next bar
@@ -367,6 +408,56 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
 
     writer->writeFromAudioSampleBuffer(fullBuffer, 0,
                                        static_cast<int>(finalSamples));
+
+    // Close writer before normalizing
+    writer.reset();
+
+    // 8. Apply LUFS normalization via FFmpeg if enabled
+    DBG("Normalization setting: " + String(settings.normalize ? "ON" : "OFF") +
+        " LUFS target: " + String(settings.normalizationLufs));
+
+    if (settings.normalize) {
+      File tempFile = job.outputFile.getSiblingFile(
+          job.outputFile.getFileNameWithoutExtension() + "_temp.wav");
+
+      // FFmpeg command: loudnorm filter for EBU R128 normalization
+      // I = target LUFS, TP = true peak limit in dB
+      String ffmpegCommand =
+          "ffmpeg -y -i " + job.outputFile.getFullPathName().quoted() +
+          " -af loudnorm=I=" + String(settings.normalizationLufs, 1) +
+          ":TP=-1.0:LRA=11 " + tempFile.getFullPathName().quoted();
+
+      DBG("FFmpeg command: " + ffmpegCommand);
+
+      ChildProcess ffmpeg;
+      if (ffmpeg.start(ffmpegCommand)) {
+        DBG("FFmpeg started, waiting...");
+        ffmpeg.waitForProcessToFinish(120000); // 2 min timeout
+
+        int exitCode = ffmpeg.getExitCode();
+        DBG("FFmpeg exit code: " + String(exitCode));
+        DBG("Temp file exists: " +
+            String(tempFile.existsAsFile() ? "YES" : "NO"));
+
+        if (exitCode == 0 && tempFile.existsAsFile()) {
+          // Replace original with normalized version
+          job.outputFile.deleteFile();
+          bool moved = tempFile.moveFileTo(job.outputFile);
+          DBG("Normalized and replaced: " + job.outputFile.getFileName() +
+              " (move success: " + String(moved ? "YES" : "NO") + ")");
+        } else {
+          DBG("FFmpeg normalization failed for: " +
+              job.outputFile.getFileName() + " exit code: " + String(exitCode));
+          String ffmpegOutput = ffmpeg.readAllProcessOutput();
+          DBG("FFmpeg output: " + ffmpegOutput);
+          tempFile.deleteFile();
+          // Keep original unnormalized file
+        }
+      } else {
+        DBG("Could not start FFmpeg. Make sure it's installed and in PATH.");
+        ffmpegMissing.store(true);
+      }
+    }
 
     return true;
   } catch (const std::exception &e) {

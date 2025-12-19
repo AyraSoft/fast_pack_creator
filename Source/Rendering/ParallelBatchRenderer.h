@@ -31,6 +31,8 @@ public:
     float masterGainDb = 0.0f; // Master gain in dB to apply to all renders
     bool loop =
         false; // If true, truncate exactly at MIDI end for seamless looping
+    bool normalize = false; // If true, apply LUFS normalization via FFmpeg
+    double normalizationLufs = -12.0; // Target LUFS level
   };
 
   struct RenderJob {
@@ -43,6 +45,7 @@ public:
     int pitchOffset = 0;
     float velocityMultiplier = 1.0f;
     float volumeDb = 0.0f;
+    double bpm = 120.0; // BPM for this specific job (for tempo-synced plugins)
     File outputFile;
   };
 
@@ -73,6 +76,10 @@ public:
   std::function<void(const String &error)> onError;
   std::function<void(float progress)> onProgress;
 
+  // Warning flag for missing FFmpeg (set if normalization was requested but
+  // FFmpeg not found)
+  bool wasFfmpegMissing() const { return ffmpegMissing.load(); }
+
 private:
   //==============================================================================
   // Queue for each row - jobs are processed sequentially within a row
@@ -102,6 +109,8 @@ private:
   std::atomic<int> failedCount{0};
   std::atomic<bool> rendering{false};
   std::atomic<bool> cancelled{false};
+  std::atomic<bool> ffmpegMissing{
+      false}; // Set if normalization requested but FFmpeg not found
 
   int totalJobs = 0;
   String lastError;

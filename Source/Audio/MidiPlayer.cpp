@@ -12,16 +12,45 @@
 
 #include "MidiPlayer.h"
 
-MidiMessageSequence MidiPlayer::loadMidiFile(const File &file, double bpm) {
+MidiMessageSequence MidiPlayer::loadMidiFile(const File &file,
+                                             double targetBpm) {
   MidiMessageSequence result;
 
   FileInputStream stream(file);
   if (stream.openedOk()) {
     MidiFile midiFile;
     if (midiFile.readFrom(stream)) {
+      // Get original tempo from MIDI file (default 120 BPM if not specified)
+      double originalBpm = 120.0;
+
+      // Search for tempo meta event in track 0
+      if (midiFile.getNumTracks() > 0) {
+        const MidiMessageSequence *track0 = midiFile.getTrack(0);
+        for (int i = 0; i < track0->getNumEvents(); ++i) {
+          auto &msg = track0->getEventPointer(i)->message;
+          if (msg.isTempoMetaEvent()) {
+            // getTempoSecondsPerQuarterNote() returns seconds per quarter note
+            originalBpm = 60.0 / msg.getTempoSecondsPerQuarterNote();
+            break;
+          }
+        }
+      }
+
+      // Convert ticks to seconds (uses the MIDI file's internal tempo)
       midiFile.convertTimestampTicksToSeconds();
+
+      // Calculate scale factor to adjust for target BPM
+      // Faster BPM = shorter time between events, so scale = original / target
+      double scaleFactor = originalBpm / targetBpm;
+
       for (int track = 0; track < midiFile.getNumTracks(); ++track) {
-        result.addSequence(*midiFile.getTrack(track), 0.0);
+        const MidiMessageSequence *trackSeq = midiFile.getTrack(track);
+        for (int i = 0; i < trackSeq->getNumEvents(); ++i) {
+          MidiMessage msg = trackSeq->getEventPointer(i)->message;
+          // Scale the timestamp for the target BPM
+          msg.setTimeStamp(msg.getTimeStamp() * scaleFactor);
+          result.addEvent(msg);
+        }
       }
     }
   }

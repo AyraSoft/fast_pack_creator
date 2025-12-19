@@ -201,7 +201,7 @@ void MainComponent::startRender() {
                       File::getSpecialLocation(File::userDesktopDirectory));
 
   if (chooser.browseForDirectory()) {
-    File outputDir = chooser.getResult();
+    currentOutputDir = chooser.getResult();
 
     // Build render queue
     renderQueue.clear();
@@ -221,7 +221,7 @@ void MainComponent::startRender() {
     }
 
     // Start processing
-    processNextRenderPass(outputDir);
+    processNextRenderPass(currentOutputDir);
   }
 }
 
@@ -233,14 +233,27 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
     pluginHost->setBpm(bpm);
     configPanel.setBpm(bpm);
 
-    MessageManager::callAsync([this] {
+    // Check if FFmpeg was missing during normalization
+    bool ffmpegWasMissing =
+        parallelRenderer && parallelRenderer->wasFfmpegMissing();
+
+    MessageManager::callAsync([this, ffmpegWasMissing] {
       if (progressWindow) {
         progressWindow->setVisible(false);
         progressWindow.reset();
       }
-      AlertWindow::showMessageBoxAsync(
-          MessageBoxIconType::InfoIcon, "Rendering Complete",
-          "All files have been rendered successfully!");
+
+      if (ffmpegWasMissing) {
+        AlertWindow::showMessageBoxAsync(
+            MessageBoxIconType::WarningIcon, "Rendering Complete - Warning",
+            "Files rendered but NORMALIZATION WAS SKIPPED!\n\n"
+            "FFmpeg was not found in PATH.\n"
+            "Install FFmpeg with: brew install ffmpeg");
+      } else {
+        AlertWindow::showMessageBoxAsync(
+            MessageBoxIconType::InfoIcon, "Rendering Complete",
+            "All files have been rendered successfully!");
+      }
     });
     return;
   }
@@ -264,6 +277,8 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
   settings.silenceThresholdDb = -50.0f;
   settings.masterGainDb = static_cast<float>(masterVolume.getValue());
   settings.loop = configPanel.isLoopEnabled();
+  settings.normalize = configPanel.isNormalizationEnabled();
+  settings.normalizationLufs = configPanel.getNormalizationHeadroom();
 
   parallelRenderer = std::make_unique<ParallelBatchRenderer>(
       pluginsManager, settings, outputDir);
@@ -292,6 +307,8 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
       job.pitchOffset = columnSettings.pitchOffset;
       job.velocityMultiplier = columnSettings.velocityMultiplier;
       job.volumeDb = rowData.volumeDb;
+      job.bpm =
+          bpm; // BPM for this job (variation BPM for tempo-synced plugins)
 
       // File naming: add [Loop] or [Trail] suffix based on mode
       String modeSuffix = settings.loop ? " [Loop]" : " [Trail]";
@@ -328,15 +345,10 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
 
   parallelRenderer->onComplete = [this] {
     MessageManager::callAsync([this] {
-      if (progressWindow) {
-        progressWindow->setVisible(false);
-        progressWindow.reset();
-      }
-      AlertWindow::showMessageBoxAsync(
-          MessageBoxIconType::InfoIcon, "Rendering Complete",
-          "All files have been rendered successfully!");
+      parallelRenderer.reset(); // Clean up current renderer
 
-      parallelRenderer.reset(); // Clean up renderer
+      // Continue with next render pass (if any)
+      processNextRenderPass(currentOutputDir);
     });
   };
 
