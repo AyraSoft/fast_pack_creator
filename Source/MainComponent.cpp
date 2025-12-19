@@ -11,6 +11,9 @@
 */
 
 #include "MainComponent.h"
+#include <atomic>
+#include <thread>
+#include <vector>
 
 //==============================================================================
 MainComponent::MainComponent() {
@@ -153,7 +156,7 @@ void MainComponent::resized() {
 
 //==============================================================================
 void MainComponent::runBatchNormalization(const File &outputDir) {
-  // Find FFmpeg
+  // Find FFmpeg path synchronously before starting background work
   String ffmpegPath = "ffmpeg";
   if (File("/usr/local/bin/ffmpeg").existsAsFile())
     ffmpegPath = "/usr/local/bin/ffmpeg";
@@ -168,73 +171,135 @@ void MainComponent::runBatchNormalization(const File &outputDir) {
     return;
   }
 
-  // Get normalization settings
+  // Get settings on main thread
   double targetLufs = configPanel.getNormalizationHeadroom();
-  int sampleRate = 44100; // Default sample rate
-  int bitDepth = 24;      // Default bit depth
-  String codec = (bitDepth == 24) ? "pcm_s24le" : "pcm_s16le";
+  double *progressPtr = &renderProgress; // Pointer for background thread
 
-  String loudnormFilter =
-      "loudnorm=I=" + String(targetLufs, 1) + ":TP=-1.0:LRA=11";
+  // Run everything else in background to not block UI
+  std::thread([outputDir, ffmpegPath, targetLufs, progressPtr]() {
+    int sampleRate = 44100;
+    int bitDepth = 24;
+    String codec = (bitDepth == 24) ? "pcm_s24le" : "pcm_s16le";
+    String loudnormFilter =
+        "loudnorm=I=" + String(targetLufs, 1) + ":TP=-1.0:LRA=11";
 
-  DBG("Starting batch normalization: " + String(targetLufs, 1) + " LUFS");
-
-  // Find all WAV files recursively in output directory
-  Array<File> wavFiles;
-  for (const auto &entry :
-       RangedDirectoryIterator(outputDir, true, "*.wav", File::findFiles)) {
-    wavFiles.add(entry.getFile());
-  }
-
-  DBG("Found " + String(wavFiles.size()) + " WAV files to normalize");
-
-  int normalized = 0;
-  int failed = 0;
-
-  for (const auto &wavFile : wavFiles) {
-    File tempFile = wavFile.getSiblingFile(
-        wavFile.getFileNameWithoutExtension() + "_norm_temp.wav");
-
-    StringArray ffmpegArgs;
-    ffmpegArgs.add(ffmpegPath);
-    ffmpegArgs.add("-y");
-    ffmpegArgs.add("-i");
-    ffmpegArgs.add(wavFile.getFullPathName());
-    ffmpegArgs.add("-af");
-    ffmpegArgs.add(loudnormFilter);
-    ffmpegArgs.add("-ar");
-    ffmpegArgs.add(String(sampleRate));
-    ffmpegArgs.add("-c:a");
-    ffmpegArgs.add(codec);
-    ffmpegArgs.add(tempFile.getFullPathName());
-
-    ChildProcess ffmpeg;
-    if (ffmpeg.start(ffmpegArgs)) {
-      ffmpeg.waitForProcessToFinish(30000); // 30 sec timeout per file
-
-      if (ffmpeg.getExitCode() == 0 && tempFile.existsAsFile()) {
-        wavFile.deleteFile();
-        tempFile.moveFileTo(wavFile);
-        normalized++;
-      } else {
-        tempFile.deleteFile();
-        failed++;
-        DBG("Failed to normalize: " + wavFile.getFileName());
-      }
-    } else {
-      failed++;
+    // Find all WAV files recursively in output directory
+    Array<File> wavFiles;
+    for (const auto &entry :
+         RangedDirectoryIterator(outputDir, true, "*.wav", File::findFiles)) {
+      wavFiles.add(entry.getFile());
     }
-  }
 
-  DBG("Normalization complete: " + String(normalized) + " OK, " +
-      String(failed) + " failed");
+    int totalFiles = wavFiles.size();
+    if (totalFiles == 0)
+      return;
 
-  if (failed > 0) {
-    AlertWindow::showMessageBoxAsync(
-        MessageBoxIconType::WarningIcon, "Normalization Partial",
-        "Normalized " + String(normalized) + " files.\n" + String(failed) +
-            " files failed to normalize.");
-  }
+    DBG("Starting PARALLEL normalization: " + String(totalFiles) +
+        " files at " + String(targetLufs, 1) + " LUFS");
+
+    std::atomic<int> completed{0};
+    std::atomic<int> failed{0};
+
+    int numThreads = jmin(8, (int)std::thread::hardware_concurrency());
+    if (numThreads < 1)
+      numThreads = 4;
+
+    DBG("Using " + String(numThreads) + " parallel FFmpeg processes");
+
+    // Worker threads for parallel normalization
+    std::vector<std::thread> threads;
+    std::atomic<int> nextIndex{0};
+
+    for (int t = 0; t < numThreads; ++t) {
+      threads.emplace_back([&, ffmpegPath, sampleRate, codec, loudnormFilter,
+                            progressPtr]() {
+        while (true) {
+          int idx = nextIndex.fetch_add(1);
+          if (idx >= totalFiles)
+            break;
+
+          const File &wavFile = wavFiles.getReference(idx);
+          File tempFile = wavFile.getSiblingFile(
+              wavFile.getFileNameWithoutExtension() + "_norm_temp.wav");
+
+          StringArray ffmpegArgs;
+          ffmpegArgs.add(ffmpegPath);
+          ffmpegArgs.add("-y");
+          ffmpegArgs.add("-i");
+          ffmpegArgs.add(wavFile.getFullPathName());
+          ffmpegArgs.add("-af");
+          ffmpegArgs.add(loudnormFilter);
+          ffmpegArgs.add("-ar");
+          ffmpegArgs.add(String(sampleRate));
+          ffmpegArgs.add("-c:a");
+          ffmpegArgs.add(codec);
+          ffmpegArgs.add(tempFile.getFullPathName());
+
+          ChildProcess ffmpeg;
+          bool success = false;
+          if (ffmpeg.start(ffmpegArgs)) {
+            while (ffmpeg.isRunning()) {
+              Thread::sleep(50);
+            }
+            if (ffmpeg.getExitCode() == 0 && tempFile.existsAsFile()) {
+              wavFile.deleteFile();
+              tempFile.moveFileTo(wavFile);
+              success = true;
+            } else {
+              tempFile.deleteFile();
+            }
+          }
+
+          if (success) {
+            completed++;
+          } else {
+            failed++;
+            DBG("Failed: " + wavFile.getFileName());
+          }
+
+          int done = completed.load() + failed.load();
+          // Update progress on main thread every file or every 5%
+          if (done == totalFiles || done % jmax(1, totalFiles / 20) == 0) {
+            double progress = done / (double)totalFiles;
+            MessageManager::callAsync([progressPtr, progress, done,
+                                       totalFiles]() {
+              if (progressPtr) {
+                *progressPtr = progress;
+              }
+              DBG("Normalization: " + String(done) + "/" + String(totalFiles) +
+                  " (" + String((int)(progress * 100)) + "%)");
+            });
+          }
+        }
+      });
+    }
+
+    // Wait for worker threads (inside background thread, so UI stays
+    // responsive)
+    for (auto &thread : threads) {
+      thread.join();
+    }
+
+    int failedCount = failed.load();
+    int completedCount = completed.load();
+
+    DBG("Normalization complete: " + String(completedCount) + " OK, " +
+        String(failedCount) + " failed");
+
+    // Show result on main thread
+    MessageManager::callAsync([failedCount, completedCount, totalFiles]() {
+      if (failedCount > 0) {
+        AlertWindow::showMessageBoxAsync(
+            MessageBoxIconType::WarningIcon, "Normalization Partial",
+            "Normalized " + String(completedCount) + " files.\n" +
+                String(failedCount) + " files failed.");
+      } else {
+        AlertWindow::showMessageBoxAsync(
+            MessageBoxIconType::InfoIcon, "Batch Complete",
+            "All " + String(totalFiles) + " files rendered and normalized!");
+      }
+    });
+  }).detach(); // Detach so UI doesn't block
 }
 
 //==============================================================================

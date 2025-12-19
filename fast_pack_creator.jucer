@@ -97,9 +97,9 @@
     <XCODE_MAC targetFolder="Builds/MacOSX" extraCompilerFlags="-Wno-deprecated-declarations"
                extraLinkerFlags="" smallIcon="" bigIcon="">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="0" name="Debug" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
+        <CONFIGURATION name="Debug" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
                        libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
-                       osxCompatibility="11 SDK"/>
+                       osxCompatibility="11 SDK" isDebug="0"/>
         <CONFIGURATION isDebug="1" name="Release" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
                        libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
                        osxCompatibility="11 SDK"/>
