@@ -483,6 +483,50 @@ bool ParallelBatchRenderer::renderSingleJob(const RenderJob &job) {
       }
     }
 
+    // 9. Validate output file - check for empty or silent files
+    if (job.outputFile.existsAsFile()) {
+      int64 fileSize = job.outputFile.getSize();
+
+      // Check if file is empty or too small (< 1KB is suspicious for audio)
+      if (fileSize < 1024) {
+        ScopedLock sl(problemFilesLock);
+        problematicFiles.add(job.outputFile.getFileName() +
+                             " [EMPTY/CORRUPT - " + String(fileSize) +
+                             " bytes]");
+        DBG("WARNING: File too small: " + job.outputFile.getFileName());
+      } else {
+        // Check for silent audio by reading and checking peak level
+        WavAudioFormat wavFormat;
+        std::unique_ptr<AudioFormatReader> reader(wavFormat.createReaderFor(
+            job.outputFile.createInputStream().release(), true));
+
+        if (reader != nullptr) {
+          // Read a sample of the audio to check levels
+          AudioBuffer<float> checkBuffer(
+              reader->numChannels,
+              jmin((int)reader->lengthInSamples, 44100)); // Check first 1 sec
+          reader->read(&checkBuffer, 0, checkBuffer.getNumSamples(), 0, true,
+                       true);
+
+          float peakLevel =
+              checkBuffer.getMagnitude(0, checkBuffer.getNumSamples());
+
+          // If peak is below -60dB, file is essentially silent
+          if (peakLevel < 0.001f) { // ~-60dB
+            ScopedLock sl(problemFilesLock);
+            problematicFiles.add(
+                job.outputFile.getFileName() + " [SILENT - peak: " +
+                String(20.0f * std::log10(peakLevel + 0.0001f), 1) + " dB]");
+            DBG("WARNING: Silent file: " + job.outputFile.getFileName());
+          }
+        }
+      }
+    } else {
+      ScopedLock sl(problemFilesLock);
+      problematicFiles.add(job.outputFile.getFileName() +
+                           " [FILE NOT CREATED]");
+    }
+
     return true;
   } catch (const std::exception &e) {
     lastError = String("Exception: ") + e.what();

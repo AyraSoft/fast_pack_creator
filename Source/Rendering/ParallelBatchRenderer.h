@@ -76,9 +76,14 @@ public:
   std::function<void(const String &error)> onError;
   std::function<void(float progress)> onProgress;
 
-  // Warning flag for missing FFmpeg (set if normalization was requested but
-  // FFmpeg not found)
+  // Warning flags
   bool wasFfmpegMissing() const { return ffmpegMissing.load(); }
+
+  // Get list of problematic files (empty, corrupt, or silent)
+  StringArray getProblematicFiles() const {
+    ScopedLock sl(problemFilesLock);
+    return problematicFiles;
+  }
 
 private:
   //==============================================================================
@@ -114,6 +119,10 @@ private:
 
   int totalJobs = 0;
   String lastError;
+
+  // Track problematic files
+  mutable CriticalSection problemFilesLock;
+  StringArray problematicFiles;
 
   JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ParallelBatchRenderer)
 };

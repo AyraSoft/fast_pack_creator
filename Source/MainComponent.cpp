@@ -237,23 +237,39 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
     bool ffmpegWasMissing =
         parallelRenderer && parallelRenderer->wasFfmpegMissing();
 
-    MessageManager::callAsync([this, ffmpegWasMissing] {
+    // Get list of problematic files
+    StringArray problemFiles = parallelRenderer
+                                   ? parallelRenderer->getProblematicFiles()
+                                   : StringArray();
+
+    MessageManager::callAsync([this, ffmpegWasMissing, problemFiles] {
       if (progressWindow) {
         progressWindow->setVisible(false);
         progressWindow.reset();
       }
 
-      if (ffmpegWasMissing) {
-        AlertWindow::showMessageBoxAsync(
-            MessageBoxIconType::WarningIcon, "Rendering Complete - Warning",
-            "Files rendered but NORMALIZATION WAS SKIPPED!\n\n"
-            "FFmpeg was not found in PATH.\n"
-            "Install FFmpeg with: brew install ffmpeg");
+      String message;
+      MessageBoxIconType icon = MessageBoxIconType::InfoIcon;
+      String title = "Rendering Complete";
+
+      if (!problemFiles.isEmpty()) {
+        icon = MessageBoxIconType::WarningIcon;
+        title = "Rendering Complete - Issues Found";
+        message = "The following files may have problems:\n\n";
+        for (auto &file : problemFiles)
+          message += "• " + file + "\n";
+        message += "\nPlease check these files manually.";
+      } else if (ffmpegWasMissing) {
+        icon = MessageBoxIconType::WarningIcon;
+        title = "Rendering Complete - Warning";
+        message = "Files rendered but NORMALIZATION WAS SKIPPED!\n\n"
+                  "FFmpeg was not found.\n"
+                  "Install FFmpeg with: brew install ffmpeg";
       } else {
-        AlertWindow::showMessageBoxAsync(
-            MessageBoxIconType::InfoIcon, "Rendering Complete",
-            "All files have been rendered successfully!");
+        message = "All files have been rendered successfully!";
       }
+
+      AlertWindow::showMessageBoxAsync(icon, title, message);
     });
     return;
   }

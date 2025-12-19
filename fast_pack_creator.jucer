@@ -97,10 +97,10 @@
     <XCODE_MAC targetFolder="Builds/MacOSX" extraCompilerFlags="-Wno-deprecated-declarations"
                extraLinkerFlags="" smallIcon="" bigIcon="">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
+        <CONFIGURATION isDebug="0" name="Debug" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
                        libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
                        osxCompatibility="11 SDK"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
+        <CONFIGURATION isDebug="1" name="Release" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
                        libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
                        osxCompatibility="11 SDK"/>
       </CONFIGURATIONS>
