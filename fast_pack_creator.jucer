@@ -56,6 +56,16 @@
         <FILE id="gEdj02" name="ParallelBatchRenderer.h" compile="0" resource="0"
               file="Source/Rendering/ParallelBatchRenderer.h"/>
       </GROUP>
+      <GROUP id="OSCGroup" name="OSC">
+        <FILE id="OSCCtrl_h" name="OSCController.h" compile="0" resource="0"
+              file="Source/OSC/OSCController.h"/>
+        <FILE id="OSCCtrl_cpp" name="OSCController.cpp" compile="1" resource="0"
+              file="Source/OSC/OSCController.cpp"/>
+        <FILE id="OSCSettings_h" name="OSCSettingsComponent.h" compile="0"
+              resource="0" file="Source/OSC/OSCSettingsComponent.h"/>
+        <FILE id="OSCSettings_cpp" name="OSCSettingsComponent.cpp" compile="1"
+              resource="0" file="Source/OSC/OSCSettingsComponent.cpp"/>
+      </GROUP>
     </GROUP>
     <FILE id="ruIJLB" name="ProjectSerializer.cpp" compile="1" resource="0"
           file="Source/ProjectSerializer.cpp"/>
@@ -99,8 +109,8 @@
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
                        libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
-                       osxCompatibility="11 SDK" isDebug="1"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
+                       osxCompatibility="11 SDK" isDebug="0"/>
+        <CONFIGURATION isDebug="1" name="Release" targetName="Fast Pack Creator" headerPath="/Users/Lavori/Juce/Juce Modules"
                        libraryPath="" recommendedWarnings="LLVM" macOSDeploymentTarget="11"
                        osxCompatibility="11 SDK"/>
       </CONFIGURATIONS>

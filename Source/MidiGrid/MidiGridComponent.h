@@ -75,6 +75,16 @@ public:
   bool isCellRenderizable(int row, int column) const;
   void setCellRenderizable(int row, int column, bool shouldBeRenderizable);
 
+  //==============================================================================
+  // OSC Remote Control - Public methods for external triggering
+  void triggerCellPlay(int row, int column);
+  void triggerCellStop(int row, int column);
+  void togglePluginGui(int row);
+  void openPluginGui(int row);
+  void closePluginGui(int row);
+  int getNumVariations() const { return numVariations; }
+  int getNumColumns() const { return midiFiles.size(); }
+
 private:
   //==============================================================================
   static constexpr int ROW_HEADER_WIDTH = 180;

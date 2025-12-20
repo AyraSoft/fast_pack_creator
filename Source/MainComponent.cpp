@@ -11,6 +11,7 @@
 */
 
 #include "MainComponent.h"
+#include "OSC/OSCSettingsComponent.h"
 #include <atomic>
 #include <thread>
 #include <vector>
@@ -65,11 +66,47 @@ MainComponent::MainComponent() {
   renderButton.setEnabled(false);
   addAndMakeVisible(renderButton);
 
-  audioSettingsButton.onClick = [this] { showAudioSettings(); };
-  addAndMakeVisible(audioSettingsButton);
+  // Batch Normalization button - normalizes existing WAV files
+  batchNormalization.onClick = [this] {
+    // Open folder chooser
+    fileChooser = std::make_unique<FileChooser>(
+        "Select folder with WAV files to normalize",
+        File::getSpecialLocation(File::userHomeDirectory), "");
 
-  pluginListButton.onClick = [this] { showPluginList(); };
-  addAndMakeVisible(pluginListButton);
+    fileChooser->launchAsync(
+        FileBrowserComponent::openMode |
+            FileBrowserComponent::canSelectDirectories,
+        [this](const FileChooser &fc) {
+          auto result = fc.getResult();
+          if (result.exists() && result.isDirectory()) {
+            // Show progress window and start normalization
+            renderProgress = 0.0;
+            progressBar = std::make_unique<ProgressBar>(renderProgress);
+
+            auto *content = new Component();
+            content->setSize(400, 60);
+            content->addAndMakeVisible(progressBar.get());
+            progressBar->setBounds(20, 20, 360, 20);
+
+            DialogWindow::LaunchOptions o;
+            o.content.setOwned(content);
+            o.dialogTitle = "Normalizing...";
+            o.componentToCentreAround = this;
+            o.dialogBackgroundColour = getLookAndFeel().findColour(
+                ResizableWindow::backgroundColourId);
+            o.escapeKeyTriggersCloseButton = false;
+            o.useNativeTitleBar = true;
+            o.resizable = false;
+
+            progressWindow.reset(o.create());
+            progressWindow->setVisible(true);
+
+            // Run normalization
+            runBatchNormalization(result);
+          }
+        });
+  };
+  addAndMakeVisible(batchNormalization);
 
   // Create menu bar
   menuBar = std::make_unique<MenuBarComponent>(this);
@@ -83,7 +120,7 @@ MainComponent::MainComponent() {
   addAndMakeVisible(masterVolume);
   masterVolume.setSliderStyle(Slider::Rotary);
   masterVolume.setRange(-96.0, 12.0, 0.1);
-  masterVolume.setValue(-6.0, dontSendNotification);
+  masterVolume.setValue(-12.0, dontSendNotification);
   masterVolume.setTextBoxStyle(Slider::TextEntryBoxPosition::TextBoxBelow,
                                false, 200, 30);
   masterVolume.setSkewFactorFromMidPoint(
@@ -107,6 +144,32 @@ MainComponent::MainComponent() {
 
   // Set initial playhead mode
   pluginHost->setPlayheadMode(configPanel.getPlayheadMode());
+
+  // Setup OSC controller callbacks
+  oscController.onCellPlay = [this](int row, int column) {
+    if (gridComponent != nullptr)
+      gridComponent->triggerCellPlay(row, column);
+  };
+  oscController.onCellStop = [this](int row, int column) {
+    if (gridComponent != nullptr)
+      gridComponent->triggerCellStop(row, column);
+  };
+  oscController.onPluginGuiToggle = [this](int row) {
+    if (gridComponent != nullptr)
+      gridComponent->togglePluginGui(row);
+  };
+  oscController.onPluginGuiOpen = [this](int row) {
+    if (gridComponent != nullptr)
+      gridComponent->openPluginGui(row);
+  };
+  oscController.onPluginGuiClose = [this](int row) {
+    if (gridComponent != nullptr)
+      gridComponent->closePluginGui(row);
+  };
+  oscController.onPanic = [this] { pluginHost->stopPlayback(); };
+
+  // Auto-connect OSC on default port
+  oscController.connect(9000);
 
   setSize(1480, 1000);
 }
@@ -146,10 +209,10 @@ void MainComponent::resized() {
   // Top bar with config and buttons
   auto topBar = bounds.removeFromTop(80);
 
-  auto buttonBar = topBar.removeFromRight(300);
-  audioSettingsButton.setBounds(buttonBar.removeFromTop(25).reduced(2));
-  pluginListButton.setBounds(buttonBar.removeFromTop(25).reduced(2));
-  renderButton.setBounds(buttonBar.removeFromTop(25).reduced(2));
+  auto buttonBar = topBar.removeFromRight(200);
+  renderButton.setBounds(
+      buttonBar.removeFromTop(buttonBar.getHeight() / 2).reduced(6));
+  batchNormalization.setBounds(buttonBar.reduced(6));
 
   configPanel.setBounds(topBar);
 
@@ -189,7 +252,7 @@ void MainComponent::runBatchNormalization(const File &outputDir) {
   double *progressPtr = &renderProgress; // Pointer for background thread
 
   // Run everything else in background to not block UI
-  std::thread([outputDir, ffmpegPath, targetLufs, progressPtr]() {
+  std::thread([this, outputDir, ffmpegPath, targetLufs, progressPtr]() {
     int sampleRate = 44100;
     int bitDepth = 24;
     String codec = (bitDepth == 24) ? "pcm_s24le" : "pcm_s16le";
@@ -213,13 +276,15 @@ void MainComponent::runBatchNormalization(const File &outputDir) {
     std::atomic<int> completed{0};
     std::atomic<int> failed{0};
 
-    int numThreads = jmin(8, (int)std::thread::hardware_concurrency());
+    // Use fewer threads - loudnorm is very CPU intensive
+    int numThreads = jmin(4, (int)std::thread::hardware_concurrency());
     if (numThreads < 1)
-      numThreads = 4;
+      numThreads = 2;
 
     DBG("Using " + String(numThreads) + " parallel FFmpeg processes");
 
     // Worker threads for parallel normalization
+    // Use fewer threads to avoid saturating I/O and memory
     std::vector<std::thread> threads;
     std::atomic<int> nextIndex{0};
 
@@ -238,6 +303,9 @@ void MainComponent::runBatchNormalization(const File &outputDir) {
           StringArray ffmpegArgs;
           ffmpegArgs.add(ffmpegPath);
           ffmpegArgs.add("-y");
+          ffmpegArgs.add("-hide_banner");
+          ffmpegArgs.add("-loglevel");
+          ffmpegArgs.add("error");
           ffmpegArgs.add("-i");
           ffmpegArgs.add(wavFile.getFullPathName());
           ffmpegArgs.add("-af");
@@ -250,15 +318,31 @@ void MainComponent::runBatchNormalization(const File &outputDir) {
 
           ChildProcess ffmpeg;
           bool success = false;
+
           if (ffmpeg.start(ffmpegArgs)) {
-            while (ffmpeg.isRunning()) {
-              Thread::sleep(50);
+            // Wait with timeout (max 120 seconds per file)
+            int timeoutMs = 120000;
+            int elapsed = 0;
+
+            while (ffmpeg.isRunning() && elapsed < timeoutMs) {
+              // Drain output to prevent buffer deadlock
+              ffmpeg.readAllProcessOutput();
+              Thread::sleep(100);
+              elapsed += 100;
             }
-            if (ffmpeg.getExitCode() == 0 && tempFile.existsAsFile()) {
+
+            if (ffmpeg.isRunning()) {
+              // Timeout - kill the process
+              ffmpeg.kill();
+              DBG("Timeout: " + wavFile.getFileName());
+            } else if (ffmpeg.getExitCode() == 0 && tempFile.existsAsFile()) {
               wavFile.deleteFile();
               tempFile.moveFileTo(wavFile);
               success = true;
-            } else {
+            }
+
+            // Clean up temp file if it exists
+            if (tempFile.existsAsFile() && !success) {
               tempFile.deleteFile();
             }
           }
@@ -271,18 +355,16 @@ void MainComponent::runBatchNormalization(const File &outputDir) {
           }
 
           int done = completed.load() + failed.load();
-          // Update progress on main thread every file or every 5%
-          if (done == totalFiles || done % jmax(1, totalFiles / 20) == 0) {
-            double progress = done / (double)totalFiles;
-            MessageManager::callAsync([progressPtr, progress, done,
-                                       totalFiles]() {
-              if (progressPtr) {
-                *progressPtr = progress;
-              }
-              DBG("Normalization: " + String(done) + "/" + String(totalFiles) +
-                  " (" + String((int)(progress * 100)) + "%)");
-            });
-          }
+          // Update progress on main thread every file
+          double progress = done / (double)totalFiles;
+          MessageManager::callAsync([progressPtr, progress, done,
+                                     totalFiles]() {
+            if (progressPtr) {
+              *progressPtr = progress;
+            }
+            DBG("Normalization: " + String(done) + "/" + String(totalFiles) +
+                " (" + String((int)(progress * 100)) + "%)");
+          });
         }
       });
     }
@@ -299,8 +381,15 @@ void MainComponent::runBatchNormalization(const File &outputDir) {
     DBG("Normalization complete: " + String(completedCount) + " OK, " +
         String(failedCount) + " failed");
 
-    // Show result on main thread
-    MessageManager::callAsync([failedCount, completedCount, totalFiles]() {
+    // Show result and close progress window on main thread
+    MessageManager::callAsync([this, failedCount, completedCount,
+                               totalFiles]() {
+      // Close progress window
+      if (progressWindow) {
+        progressWindow->setVisible(false);
+        progressWindow.reset();
+      }
+
       if (failedCount > 0) {
         AlertWindow::showMessageBoxAsync(
             MessageBoxIconType::WarningIcon, "Normalization Partial",
@@ -500,16 +589,28 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
 
     // Run batch normalization if enabled
     bool normalizeEnabled = configPanel.isNormalizationEnabled();
-    if (normalizeEnabled) {
-      runBatchNormalization(outputDir);
-    }
 
-    // Get list of problematic files
+    // Get list of problematic files before clearing renderer
     StringArray problemFiles = parallelRenderer
                                    ? parallelRenderer->getProblematicFiles()
                                    : StringArray();
 
-    MessageManager::callAsync([this, normalizeEnabled, problemFiles] {
+    if (normalizeEnabled) {
+      // Update progress window title and reset progress for normalization
+      MessageManager::callAsync([this] {
+        if (progressWindow) {
+          progressWindow->setName("Normalizing...");
+        }
+        renderProgress = 0.0;
+      });
+
+      // Run normalization (will close progress window when done)
+      runBatchNormalization(outputDir);
+      return; // Don't close window here, runBatchNormalization will handle it
+    }
+
+    // Only close window here if normalization is NOT enabled
+    MessageManager::callAsync([this, problemFiles] {
       if (progressWindow) {
         progressWindow->setVisible(false);
         progressWindow.reset();
@@ -526,8 +627,6 @@ void MainComponent::processNextRenderPass(const File &outputDir) {
         for (auto &file : problemFiles)
           message += "• " + file + "\n";
         message += "\nPlease check these files manually.";
-      } else if (normalizeEnabled) {
-        message = "All files rendered and normalized successfully!";
       } else {
         message = "All files have been rendered successfully!";
       }
@@ -713,6 +812,23 @@ void MainComponent::showPluginList() {
   o.launchAsync();
 }
 
+void MainComponent::showOscSettings() {
+  auto *oscSettingsComp = new OSCSettingsComponent(oscController);
+  oscSettingsComp->setSize(400, 300);
+
+  DialogWindow::LaunchOptions o;
+  o.content.setOwned(oscSettingsComp);
+  o.dialogTitle = "OSC Settings";
+  o.componentToCentreAround = this;
+  o.dialogBackgroundColour =
+      getLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+  o.escapeKeyTriggersCloseButton = true;
+  o.useNativeTitleBar = false;
+  o.resizable = false;
+
+  o.launchAsync();
+}
+
 //==============================================================================
 void MainComponent::changeListenerCallback(ChangeBroadcaster *source) {
   ignoreUnused(source);
@@ -731,7 +847,9 @@ void MainComponent::onScanFinish(ayra::PluginsManager *) {
 
 //==============================================================================
 // MenuBarModel implementation
-StringArray MainComponent::getMenuBarNames() { return {"File", "Utils"}; }
+StringArray MainComponent::getMenuBarNames() {
+  return {"File", "Utils", "Settings"};
+}
 
 PopupMenu MainComponent::getMenuForIndex(int menuIndex, const String &) {
   PopupMenu menu;
@@ -745,6 +863,10 @@ PopupMenu MainComponent::getMenuForIndex(int menuIndex, const String &) {
     menu.addItem(FileLoad, "Load...");
   } else if (menuIndex == 1) {
     menu.addItem(1, "Panic");
+  } else if (menuIndex == 2) {
+    menu.addItem(1, "Audio Settings");
+    menu.addItem(2, "Plugin Scanner");
+    menu.addItem(3, "OSC Settings");
   }
 
   return menu;
@@ -771,6 +893,20 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
   } else if (topLevelMenuIndex == 1) {
     if (configPanel.onMidiPanic)
       configPanel.onMidiPanic();
+  } else if (topLevelMenuIndex == 2) {
+    switch (menuItemID) {
+    case 1:
+      showAudioSettings();
+      break;
+    case 2:
+      showPluginList();
+      break;
+    case 3:
+      showOscSettings();
+      break;
+    default:
+      break;
+    }
   }
 }
 

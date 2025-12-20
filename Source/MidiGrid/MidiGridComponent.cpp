@@ -531,3 +531,34 @@ void MidiGridComponent::handleRowSelection(int rowIndex) {
     pluginHost.setGain(Decibels::decibelsToGain(header->getVolumeDb()));
   }
 }
+
+//==============================================================================
+// OSC Remote Control - Public methods for external triggering
+void MidiGridComponent::triggerCellPlay(int row, int column) {
+  handleCellPlay(row, column);
+}
+
+void MidiGridComponent::triggerCellStop(int row, int column) {
+  handleCellStop(row, column);
+}
+
+void MidiGridComponent::togglePluginGui(int row) {
+  if (row >= 0 && row < rowHeaders.size()) {
+    if (rowHeaders[row]->isPluginEditorShown())
+      rowHeaders[row]->closePluginEditor();
+    else
+      rowHeaders[row]->showPluginEditor();
+  }
+}
+
+void MidiGridComponent::openPluginGui(int row) {
+  if (row >= 0 && row < rowHeaders.size()) {
+    rowHeaders[row]->showPluginEditor();
+  }
+}
+
+void MidiGridComponent::closePluginGui(int row) {
+  if (row >= 0 && row < rowHeaders.size()) {
+    rowHeaders[row]->closePluginEditor();
+  }
+}

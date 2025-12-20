@@ -15,6 +15,7 @@
 #include "Audio/PluginHost.h"
 #include "ConfigurationPanel.h"
 #include "MidiGrid/MidiGridComponent.h"
+#include "OSC/OSCController.h"
 #include "ProjectSerializer.h"
 #include "Rendering/ParallelBatchRenderer.h"
 #include <JuceHeader.h>
@@ -53,11 +54,13 @@ private:
   std::unique_ptr<MidiGridComponent> gridComponent;
 
   TextButton renderButton{"Render All"};
-  TextButton audioSettingsButton{"Audio Settings"};
-  TextButton pluginListButton{"Plugin Scanner"};
+  TextButton batchNormalization{"Batch Normalization"};
 
   std::unique_ptr<Component> pluginListWindow;
   std::unique_ptr<MenuBarComponent> menuBar;
+
+  // OSC Remote Control
+  OSCController oscController;
 
   // Rendering
   struct RenderPass {
@@ -71,6 +74,7 @@ private:
   std::unique_ptr<ParallelBatchRenderer> parallelRenderer;
   std::unique_ptr<DialogWindow> progressWindow;
   std::unique_ptr<ProgressBar> progressBar;
+  std::unique_ptr<FileChooser> fileChooser;
   double renderProgress = 0.0;
   File currentOutputDir; // Stored for multi-pass rendering
 
@@ -98,6 +102,7 @@ private:
   void startRender();
   void showAudioSettings();
   void showPluginList();
+  void showOscSettings();
   void runBatchNormalization(
       const File &outputDir); // Post-render LUFS normalization
 

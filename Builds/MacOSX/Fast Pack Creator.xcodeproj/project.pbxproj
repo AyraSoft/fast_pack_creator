@@ -24,6 +24,7 @@
 		39C8572ABB3E827060AF712D /* Accelerate.framework */ = {isa = PBXBuildFile; fileRef = 14536D37E4590BBD4E4F2563; };
 		3F3931F3EA06C608D479F8A2 /* MidiPlayer.cpp */ = {isa = PBXBuildFile; fileRef = 3CBA3297E690D5F11CBA227C; };
 		43C701842D0EB549A0CBA7ED /* ColumnHeader.cpp */ = {isa = PBXBuildFile; fileRef = 6DEEB9697FE2FD37B620329D; };
+		52C6B6EBF3983FCE9691CFFC /* OSCController.cpp */ = {isa = PBXBuildFile; fileRef = ECAAFD5CBCB31E89B2F4701A; };
 		53DB1A7F4610721F8F489D5B /* include_ayra_dmx.mm */ = {isa = PBXBuildFile; fileRef = 86FB6A865FA093A82C2E02CF; };
 		5758D985403237D0AF0BBBC0 /* MetalKit.framework */ = {isa = PBXBuildFile; fileRef = 142060CB5AC042331B2C357F; settings = { ATTRIBUTES = (Weak, ); }; };
 		58E02257AAE70AE18E16BD89 /* DiscRecording.framework */ = {isa = PBXBuildFile; fileRef = FCC1C3B773EAC3CF385553C6; };
@@ -32,6 +33,7 @@
 		6663F16BE4A4ABD70D6EA53F /* include_juce_osc.cpp */ = {isa = PBXBuildFile; fileRef = 5027C2202E3755DEFC2A82B5; };
 		666F246B1700633C19A9F009 /* Metal.framework */ = {isa = PBXBuildFile; fileRef = 4FEC52D544C7BA7D79D3C3D5; settings = { ATTRIBUTES = (Weak, ); }; };
 		7D3D11AC8DBE271FD6EB3D2F /* MainComponent.cpp */ = {isa = PBXBuildFile; fileRef = C12307EE4EF29E9FE1C460C4; };
+		7E963E519ADF37A6E9F837FD /* OSCSettingsComponent.cpp */ = {isa = PBXBuildFile; fileRef = AD09F613DC6D9A5E3E6E1B4B; };
 		80A797EBDC1A11B68A62F6BE /* Security.framework */ = {isa = PBXBuildFile; fileRef = B376FEF5F329C532C95EFFC0; };
 		86A6B59CF476475DBB4654B6 /* include_juce_serial.cpp */ = {isa = PBXBuildFile; fileRef = 48088EEFDC743D7FE7A3DAD7; };
 		8C579E89102166E967F908AB /* AudioToolbox.framework */ = {isa = PBXBuildFile; fileRef = 7A82DFD4D63615B939688CA8; };
@@ -129,6 +131,7 @@
 		8EF8253B0AEB2FB32B0D3FA3 /* include_juce_audio_processors_headless.mm */ /* include_juce_audio_processors_headless.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_processors_headless.mm; path = ../../JuceLibraryCode/include_juce_audio_processors_headless.mm; sourceTree = SOURCE_ROOT; };
 		921DA112FDD3F07914BE7FB9 /* ayra_pdf */ /* ayra_pdf */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ayra_pdf; path = "/Users/Lavori/Juce/Juce Modules/ayra_pdf"; sourceTree = "<absolute>"; };
 		9450390910932A9E89499924 /* ff_meters */ /* ff_meters */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ff_meters; path = "/Users/Lavori/Juce/Juce Modules/ff_meters"; sourceTree = "<absolute>"; };
+		95CBBE11BE889256FEFF8D5B /* OSCController.h */ /* OSCController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OSCController.h; path = ../../Source/OSC/OSCController.h; sourceTree = SOURCE_ROOT; };
 		969A78EA74D9F804F4F6F890 /* juce_audio_devices */ /* juce_audio_devices */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_devices; path = /Applications/JUCE/modules/juce_audio_devices; sourceTree = "<absolute>"; };
 		97CED04A1EDA729168C14F11 /* juce_events */ /* juce_events */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_events; path = /Applications/JUCE/modules/juce_events; sourceTree = "<absolute>"; };
 		9D46048A6616F9F1D443DAFF /* MainComponent.h */ /* MainComponent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MainComponent.h; path = ../../Source/MainComponent.h; sourceTree = SOURCE_ROOT; };
@@ -137,8 +140,10 @@
 		A24562643424B30B92FB27C2 /* juce_serial */ /* juce_serial */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_serial; path = "../../../../Juce/Juce Modules/benkuper/juce_serial"; sourceTree = SOURCE_ROOT; };
 		ABAE996DEDAE0C42994E2700 /* juce_osc */ /* juce_osc */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_osc; path = /Applications/JUCE/modules/juce_osc; sourceTree = "<absolute>"; };
 		AC5518A4DCE0937AAE4E9879 /* include_juce_graphics_Sheenbidi.c */ /* include_juce_graphics_Sheenbidi.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = include_juce_graphics_Sheenbidi.c; path = ../../JuceLibraryCode/include_juce_graphics_Sheenbidi.c; sourceTree = SOURCE_ROOT; };
+		AD09F613DC6D9A5E3E6E1B4B /* OSCSettingsComponent.cpp */ /* OSCSettingsComponent.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = OSCSettingsComponent.cpp; path = ../../Source/OSC/OSCSettingsComponent.cpp; sourceTree = SOURCE_ROOT; };
 		ADE17A941C2DD11F3FF863AC /* include_ayra_rapid_thread_pool.mm */ /* include_ayra_rapid_thread_pool.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_ayra_rapid_thread_pool.mm; path = ../../JuceLibraryCode/include_ayra_rapid_thread_pool.mm; sourceTree = SOURCE_ROOT; };
 		AE995F719EB6BF70663821B5 /* include_juce_events.mm */ /* include_juce_events.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_events.mm; path = ../../JuceLibraryCode/include_juce_events.mm; sourceTree = SOURCE_ROOT; };
+		B20A0762313A78A0624E750C /* OSCSettingsComponent.h */ /* OSCSettingsComponent.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OSCSettingsComponent.h; path = ../../Source/OSC/OSCSettingsComponent.h; sourceTree = SOURCE_ROOT; };
 		B2157C8D45AA7889C7A01A1A /* ParallelBatchRenderer.cpp */ /* ParallelBatchRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ParallelBatchRenderer.cpp; path = ../../Source/Rendering/ParallelBatchRenderer.cpp; sourceTree = SOURCE_ROOT; };
 		B376FEF5F329C532C95EFFC0 /* Security.framework */ /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		B68AB541CA311A506A025863 /* juce_data_structures */ /* juce_data_structures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_data_structures; path = /Applications/JUCE/modules/juce_data_structures; sourceTree = "<absolute>"; };
@@ -166,6 +171,7 @@
 		E96B34DB4617888F6618B5CD /* ayra_plugins_manager */ /* ayra_plugins_manager */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ayra_plugins_manager; path = "/Users/Lavori/Juce/Juce Modules/ayra_plugins_manager"; sourceTree = "<absolute>"; };
 		E98CF5CFD1F1D6AE232E7000 /* ConfigurationPanel.h */ /* ConfigurationPanel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ConfigurationPanel.h; path = ../../Source/ConfigurationPanel.h; sourceTree = SOURCE_ROOT; };
 		EBC495974BF83955F33D91FC /* MidiPlayer.h */ /* MidiPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MidiPlayer.h; path = ../../Source/Audio/MidiPlayer.h; sourceTree = SOURCE_ROOT; };
+		ECAAFD5CBCB31E89B2F4701A /* OSCController.cpp */ /* OSCController.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = OSCController.cpp; path = ../../Source/OSC/OSCController.cpp; sourceTree = SOURCE_ROOT; };
 		ED7468F54913EA7641B59A35 /* App */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fast Pack Creator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F21DE288E2CDC011F8014079 /* ayra_selection_engine */ /* ayra_selection_engine */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ayra_selection_engine; path = "/Users/Lavori/Juce/Juce Modules/ayra_selection_engine"; sourceTree = "<absolute>"; };
 		F593C354E540A7FAD8A2FDDA /* include_ayra_pdf.mm */ /* include_ayra_pdf.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_ayra_pdf.mm; path = ../../JuceLibraryCode/include_ayra_pdf.mm; sourceTree = SOURCE_ROOT; };
@@ -318,6 +324,17 @@
 			name = Rendering;
 			sourceTree = "<group>";
 		};
+		54B96A96EE250B1B1D80B6CD /* OSC */ = {
+			isa = PBXGroup;
+			children = (
+				95CBBE11BE889256FEFF8D5B,
+				ECAAFD5CBCB31E89B2F4701A,
+				B20A0762313A78A0624E750C,
+				AD09F613DC6D9A5E3E6E1B4B,
+			);
+			name = OSC;
+			sourceTree = "<group>";
+		};
 		8E0A4884AA74B31CAA615E94 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -384,6 +401,7 @@
 				22BC27C2C04C47D1E15AD6B1,
 				A4D770D29680AFB31B9EF8B0,
 				4E62CC5FE5D344EF69F18C7E,
+				54B96A96EE250B1B1D80B6CD,
 			);
 			name = Source;
 			sourceTree = "<group>";
@@ -486,6 +504,8 @@
 				3F3931F3EA06C608D479F8A2,
 				A77E25022BCFBE68211105B0,
 				9F61C4ABBDE2F288AA716C69,
+				52C6B6EBF3983FCE9691CFFC,
+				7E963E519ADF37A6E9F837FD,
 				12C7D8FFDAC9C0E3C5CC3536,
 				B368C9BBD41815894C0C1E4B,
 				1BA1CF9DD63EB88A4A3FC9A0,
@@ -564,6 +584,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CODE_SIGN_FLAGS = --timestamp;
 				PRODUCT_NAME = "Fast Pack Creator";
 				SDKROOT = macosx;
@@ -573,6 +594,100 @@
 			name = Release;
 		};
 		3B8B00417A8E0D14B8DE88B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
+				COPY_PHASE_STRIP = NO;
+				EXCLUDED_ARCHS = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_DEBUG=1",
+					"DEBUG=1",
+					"JUCE_PROJUCER_VERSION=0x8000c",
+					"JUCE_MODULE_AVAILABLE_ayra_audio_processors_engine=1",
+					"JUCE_MODULE_AVAILABLE_ayra_buffers=1",
+					"JUCE_MODULE_AVAILABLE_ayra_dmx=1",
+					"JUCE_MODULE_AVAILABLE_ayra_graph=1",
+					"JUCE_MODULE_AVAILABLE_ayra_gui=1",
+					"JUCE_MODULE_AVAILABLE_ayra_pdf=1",
+					"JUCE_MODULE_AVAILABLE_ayra_plugins_manager=1",
+					"JUCE_MODULE_AVAILABLE_ayra_project_base=1",
+					"JUCE_MODULE_AVAILABLE_ayra_rapid_thread_pool=1",
+					"JUCE_MODULE_AVAILABLE_ayra_selection_engine=1",
+					"JUCE_MODULE_AVAILABLE_ff_meters=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
+					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
+					"JUCE_MODULE_AVAILABLE_juce_core=1",
+					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
+					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
+					"JUCE_MODULE_AVAILABLE_juce_events=1",
+					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
+					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
+					"JUCE_MODULE_AVAILABLE_juce_osc=1",
+					"JUCE_MODULE_AVAILABLE_juce_serial=1",
+					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
+					"JUCE_PLUGINHOST_VST3=1",
+					"JUCE_PLUGINHOST_AU=1",
+					"JUCE_PLUGINHOST_LADSPA=0",
+					"JUCE_PLUGINHOST_LV2=0",
+					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
+					"JUCE_STANDALONE_APPLICATION=1",
+					"JUCE_MODAL_LOOPS_PERMITTED=1",
+					"JUCER_XCODE_MAC_F6D2F4CF=1",
+					"JUCE_APP_VERSION=1.0.0",
+					"JUCE_APP_VERSION_HEX=0x10000",
+					"JucePlugin_Build_VST=0",
+					"JucePlugin_Build_VST3=0",
+					"JucePlugin_Build_AU=0",
+					"JucePlugin_Build_AUv3=0",
+					"JucePlugin_Build_AAX=0",
+					"JucePlugin_Build_Standalone=0",
+					"JucePlugin_Build_Unity=0",
+					"JucePlugin_Build_LV2=0",
+				);
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				HEADER_SEARCH_PATHS = (
+					"/Applications/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK",
+					"\"/Users/Lavori/Juce/Juce Modules/vstsdk2-2.4\"",
+					"$(SRCROOT)/../../JuceLibraryCode",
+					"\"$(SRCROOT)/../../../../Juce/Juce Modules/Ayra-Modules\"",
+					"\"/Users/Lavori/Juce/Juce Modules\"",
+					"/Applications/JUCE/modules",
+					"\"$(SRCROOT)/../../../../Juce/Juce Modules/benkuper\"",
+					"\"/Users/Lavori/Juce/Juce Modules\"",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = Info-App.plist;
+				INFOPLIST_PREPROCESS = NO;
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"../../../../Juce/Juce Modules/benkuper/juce_serial/libs/MacOSX\"",
+					"\"../../../../Juce/Juce Modules/benkuper/juce_serial/libs/MacOSX/${CURRENT_ARCH}\"",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 11;
+				MTL_HEADER_SEARCH_PATHS = "/Applications/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK \"/Users/Lavori/Juce/Juce Modules/vstsdk2-2.4\" $(SRCROOT)/../../JuceLibraryCode \"$(SRCROOT)/../../../../Juce/Juce Modules/Ayra-Modules\" \"/Users/Lavori/Juce/Juce Modules\" /Applications/JUCE/modules \"$(SRCROOT)/../../../../Juce/Juce Modules/benkuper\" \"/Users/Lavori/Juce/Juce Modules\"";
+				OTHER_CFLAGS = "-Wall -Wcast-align -Wfloat-equal -Wno-ignored-qualifiers -Wsign-compare -Wsign-conversion -Wstrict-aliasing -Wswitch-enum -Wuninitialized -Wunreachable-code -Wunused-parameter -Wmissing-field-initializers -Wshadow-all -Wshorten-64-to-32 -Wconversion -Wint-conversion -Wconditional-uninitialized -Wconstant-conversion -Wbool-conversion -Wextra-semi -Wshift-sign-overflow -Wmissing-prototypes -Wnullable-to-nonnull-conversion -Wpedantic -Wdeprecated -Wunguarded-availability -Wunguarded-availability-new -Wno-deprecated-declarations";
+				OTHER_CPLUSPLUSFLAGS = "-Woverloaded-virtual -Wreorder -Wzero-as-null-pointer-constant -Wunused-private-field -Winconsistent-missing-destructor-override -Wall -Wcast-align -Wfloat-equal -Wno-ignored-qualifiers -Wsign-compare -Wsign-conversion -Wstrict-aliasing -Wswitch-enum -Wuninitialized -Wunreachable-code -Wunused-parameter -Wmissing-field-initializers -Wshadow-all -Wshorten-64-to-32 -Wconversion -Wint-conversion -Wconditional-uninitialized -Wconstant-conversion -Wbool-conversion -Wextra-semi -Wshift-sign-overflow -Wmissing-prototypes -Wnullable-to-nonnull-conversion -Wpedantic -Wdeprecated -Wunguarded-availability -Wunguarded-availability-new -Wno-deprecated-declarations";
+				OTHER_LDFLAGS = "-lserial";
+				PRODUCT_BUNDLE_IDENTIFIER = com.AyraSoft.FastPackCreator;
+				PRODUCT_NAME = "Fast Pack Creator";
+				USE_HEADERMAP = NO;
+				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
+			};
+			name = Release;
+		};
+		84005A51166CCDF16AF54DF8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
@@ -665,100 +780,6 @@
 				USE_HEADERMAP = NO;
 				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
 			};
-			name = Release;
-		};
-		84005A51166CCDF16AF54DF8 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++20";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "$(PROJECT_DIR)/build/$(CONFIGURATION)";
-				COPY_PHASE_STRIP = NO;
-				EXCLUDED_ARCHS = "";
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"_DEBUG=1",
-					"DEBUG=1",
-					"JUCE_PROJUCER_VERSION=0x8000c",
-					"JUCE_MODULE_AVAILABLE_ayra_audio_processors_engine=1",
-					"JUCE_MODULE_AVAILABLE_ayra_buffers=1",
-					"JUCE_MODULE_AVAILABLE_ayra_dmx=1",
-					"JUCE_MODULE_AVAILABLE_ayra_graph=1",
-					"JUCE_MODULE_AVAILABLE_ayra_gui=1",
-					"JUCE_MODULE_AVAILABLE_ayra_pdf=1",
-					"JUCE_MODULE_AVAILABLE_ayra_plugins_manager=1",
-					"JUCE_MODULE_AVAILABLE_ayra_project_base=1",
-					"JUCE_MODULE_AVAILABLE_ayra_rapid_thread_pool=1",
-					"JUCE_MODULE_AVAILABLE_ayra_selection_engine=1",
-					"JUCE_MODULE_AVAILABLE_ff_meters=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_basics=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_devices=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_formats=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_processors=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_processors_headless=1",
-					"JUCE_MODULE_AVAILABLE_juce_audio_utils=1",
-					"JUCE_MODULE_AVAILABLE_juce_core=1",
-					"JUCE_MODULE_AVAILABLE_juce_data_structures=1",
-					"JUCE_MODULE_AVAILABLE_juce_dsp=1",
-					"JUCE_MODULE_AVAILABLE_juce_events=1",
-					"JUCE_MODULE_AVAILABLE_juce_graphics=1",
-					"JUCE_MODULE_AVAILABLE_juce_gui_basics=1",
-					"JUCE_MODULE_AVAILABLE_juce_gui_extra=1",
-					"JUCE_MODULE_AVAILABLE_juce_osc=1",
-					"JUCE_MODULE_AVAILABLE_juce_serial=1",
-					"JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1",
-					"JUCE_PLUGINHOST_VST3=1",
-					"JUCE_PLUGINHOST_AU=1",
-					"JUCE_PLUGINHOST_LADSPA=0",
-					"JUCE_PLUGINHOST_LV2=0",
-					"JUCE_STRICT_REFCOUNTEDPOINTER=1",
-					"JUCE_STANDALONE_APPLICATION=1",
-					"JUCE_MODAL_LOOPS_PERMITTED=1",
-					"JUCER_XCODE_MAC_F6D2F4CF=1",
-					"JUCE_APP_VERSION=1.0.0",
-					"JUCE_APP_VERSION_HEX=0x10000",
-					"JucePlugin_Build_VST=0",
-					"JucePlugin_Build_VST3=0",
-					"JucePlugin_Build_AU=0",
-					"JucePlugin_Build_AUv3=0",
-					"JucePlugin_Build_AAX=0",
-					"JucePlugin_Build_Standalone=0",
-					"JucePlugin_Build_Unity=0",
-					"JucePlugin_Build_LV2=0",
-				);
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
-				HEADER_SEARCH_PATHS = (
-					"/Applications/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK",
-					"\"/Users/Lavori/Juce/Juce Modules/vstsdk2-2.4\"",
-					"$(SRCROOT)/../../JuceLibraryCode",
-					"\"$(SRCROOT)/../../../../Juce/Juce Modules/Ayra-Modules\"",
-					"\"/Users/Lavori/Juce/Juce Modules\"",
-					"/Applications/JUCE/modules",
-					"\"$(SRCROOT)/../../../../Juce/Juce Modules/benkuper\"",
-					"\"/Users/Lavori/Juce/Juce Modules\"",
-					"$(inherited)",
-				);
-				INFOPLIST_FILE = Info-App.plist;
-				INFOPLIST_PREPROCESS = NO;
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"../../../../Juce/Juce Modules/benkuper/juce_serial/libs/MacOSX\"",
-					"\"../../../../Juce/Juce Modules/benkuper/juce_serial/libs/MacOSX/${CURRENT_ARCH}\"",
-				);
-				MACOSX_DEPLOYMENT_TARGET = 11;
-				MTL_HEADER_SEARCH_PATHS = "/Applications/JUCE/modules/juce_audio_processors_headless/format_types/VST3_SDK \"/Users/Lavori/Juce/Juce Modules/vstsdk2-2.4\" $(SRCROOT)/../../JuceLibraryCode \"$(SRCROOT)/../../../../Juce/Juce Modules/Ayra-Modules\" \"/Users/Lavori/Juce/Juce Modules\" /Applications/JUCE/modules \"$(SRCROOT)/../../../../Juce/Juce Modules/benkuper\" \"/Users/Lavori/Juce/Juce Modules\"";
-				OTHER_CFLAGS = "-Wall -Wcast-align -Wfloat-equal -Wno-ignored-qualifiers -Wsign-compare -Wsign-conversion -Wstrict-aliasing -Wswitch-enum -Wuninitialized -Wunreachable-code -Wunused-parameter -Wmissing-field-initializers -Wshadow-all -Wshorten-64-to-32 -Wconversion -Wint-conversion -Wconditional-uninitialized -Wconstant-conversion -Wbool-conversion -Wextra-semi -Wshift-sign-overflow -Wmissing-prototypes -Wnullable-to-nonnull-conversion -Wpedantic -Wdeprecated -Wunguarded-availability -Wunguarded-availability-new -Wno-deprecated-declarations";
-				OTHER_CPLUSPLUSFLAGS = "-Woverloaded-virtual -Wreorder -Wzero-as-null-pointer-constant -Wunused-private-field -Winconsistent-missing-destructor-override -Wall -Wcast-align -Wfloat-equal -Wno-ignored-qualifiers -Wsign-compare -Wsign-conversion -Wstrict-aliasing -Wswitch-enum -Wuninitialized -Wunreachable-code -Wunused-parameter -Wmissing-field-initializers -Wshadow-all -Wshorten-64-to-32 -Wconversion -Wint-conversion -Wconditional-uninitialized -Wconstant-conversion -Wbool-conversion -Wextra-semi -Wshift-sign-overflow -Wmissing-prototypes -Wnullable-to-nonnull-conversion -Wpedantic -Wdeprecated -Wunguarded-availability -Wunguarded-availability-new -Wno-deprecated-declarations";
-				OTHER_LDFLAGS = "-lserial";
-				PRODUCT_BUNDLE_IDENTIFIER = com.AyraSoft.FastPackCreator;
-				PRODUCT_NAME = "Fast Pack Creator";
-				USE_HEADERMAP = NO;
-				VALID_ARCHS = "i386 x86_64 arm64 arm64e";
-			};
 			name = Debug;
 		};
 		924F18971B28C34E77DD1B81 /* Debug */ = {
@@ -801,7 +822,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CODE_SIGN_FLAGS = --timestamp;
 				PRODUCT_NAME = "Fast Pack Creator";
 				SDKROOT = macosx;

@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../../../Applications/JUCE"
+		},
+		{
+			"path": "../../Juce/Juce Modules"
+		},
+		{
+			"path": "../../Juce/Juce Projects"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}
